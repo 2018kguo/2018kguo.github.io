@@ -1,5 +1,5 @@
-use egui::{Pos2, FontFamily::*, FontId};
 use egui::TextStyle;
+use egui::{FontFamily::*, FontId};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -60,19 +60,19 @@ impl eframe::App for TemplateApp {
         // For inspiration and more examples, go to https://emilk.github.io/egui
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
-                egui::menu::bar(ui, |ui| {
-                    // NOTE: no File->Quit on web pages!
-                    let is_web = cfg!(target_arch = "wasm32");
-                    if !is_web {
-                        ui.menu_button("File", |ui| {
-                            if ui.button("Quit").clicked() {
-                                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                            }
-                        });
-                        ui.add_space(16.0);
-                    }
+            egui::menu::bar(ui, |ui| {
+                // NOTE: no File->Quit on web pages!
+                let is_web = cfg!(target_arch = "wasm32");
+                if !is_web {
+                    ui.menu_button("File", |ui| {
+                        if ui.button("Quit").clicked() {
+                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                        }
+                    });
+                    ui.add_space(16.0);
+                }
 
-                    egui::widgets::global_dark_light_mode_buttons(ui);
+                egui::widgets::global_dark_light_mode_buttons(ui);
             });
         });
 
@@ -82,7 +82,7 @@ impl eframe::App for TemplateApp {
                 right: 100.0,
                 top: 0.0,
                 bottom: 0.0,
-            }).show(ui, |ui| {
+            }).show(ui, |_ui| {
                 // The central panel the region left after adding TopPanel's and SidePanel's
                 let intro_window = make_window("Intro", false);
                 let links_window = make_window("Links", false);
@@ -97,7 +97,6 @@ impl eframe::App for TemplateApp {
                         ui.label("I strive to build performant and composable software. I've recently been interested in event-driven systems, Rust, and programming languages.");
                     });
                 });
-                
                 links_window.show(ctx, |
                 ui| {
                     make_frame_with_padding(20.0)
@@ -128,12 +127,11 @@ impl eframe::App for TemplateApp {
                     });
                 });
             });
-            
         });
     }
 }
 
-fn make_window(title: &str, show_title: bool) -> egui::Window {
+fn make_window(title: &str, show_title: bool) -> egui::Window<'_> {
     egui::Window::new(title.to_string())
         .collapsible(false)
         .resizable([true, false])
@@ -143,13 +141,5 @@ fn make_window(title: &str, show_title: bool) -> egui::Window {
 }
 
 fn make_frame_with_padding(padding: f32) -> egui::Frame {
-    egui::Frame::none()
-        .inner_margin(egui::Margin::same(padding))
-}
-
-fn link_to_repo(ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        ui.hyperlink_to("Repo for this website", "https://github.com/2018kguo/2018kguo.github.io");
-    });
+    egui::Frame::none().inner_margin(egui::Margin::same(padding))
 }
