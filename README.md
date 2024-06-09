@@ -1,1 +1,3 @@
-Personal website. Using a modified Gatsby Theme [`@lekoarts/gatsby-theme-cara`](https://github.com/LekoArts/gatsby-themes/tree/master/themes/gatsby-theme-cara).
+Personal website hosted on github pages. Used to be a gatsby.js static site, now it uses egui/eframe (powered by Rust & WASM)
+
+Refer to https://github.com/emilk/eframe_template for directions on how to get something like this set up
