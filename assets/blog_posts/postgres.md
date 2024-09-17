@@ -1,0 +1,1 @@
+https://www.interdb.jp/pg/ is a lovely resource, planning on giving it a proper read and taking notes here later.

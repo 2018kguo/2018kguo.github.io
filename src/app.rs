@@ -1,32 +1,48 @@
-use egui::TextStyle;
-use egui::{FontFamily::*, FontId};
+use egui::{FontFamily::*, FontId, RichText, TextStyle};
+use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
+use serde::{Deserialize, Serialize};
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct BlogPost {
+    title: String,
+    content: String,
+    date: String,
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
+#[serde(default)]
 pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+    blog_posts: Vec<BlogPost>,
+    current_post_index: Option<usize>,
+}
 
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
+// Macro to include blog posts
+macro_rules! include_blog_posts {
+    ($($filename:expr, $title:expr, $date:expr),+) => {
+        vec![
+            $(
+                BlogPost {
+                    title: $title.to_string(),
+                    content: include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/blog_posts/", $filename, ".md")).to_string(),
+                    date: $date.to_string(),
+                },
+            )+
+        ]
+    };
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            blog_posts: Vec::new(),
+            current_post_index: None,
         }
     }
 }
 
 impl TemplateApp {
-    /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // This is also where you can customize the look and feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+        // Set up fonts and styles
         cc.egui_ctx.set_visuals(egui::Visuals::light());
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
@@ -38,26 +54,27 @@ impl TemplateApp {
         ]
         .into();
         cc.egui_ctx.set_style(style);
-        // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
 
-        Default::default()
+        // Load blog posts
+        let blog_posts = Self::load_blog_posts();
+        let len_blog_posts = blog_posts.len();
+
+        Self {
+            blog_posts: blog_posts,
+            current_post_index: if len_blog_posts > 0 { Some(0) } else { None }
+        }
+    }
+
+    fn load_blog_posts() -> Vec<BlogPost> {
+        include_blog_posts!(
+            "postgres", "Postgres", "2024-09-16"
+        )
     }
 }
 
-impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
 
-    /// Called each time the UI needs repainting, which may be many times per second.
+impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -86,6 +103,8 @@ impl eframe::App for TemplateApp {
                 // The central panel the region left after adding TopPanel's and SidePanel's
                 let intro_window = make_window("Intro", false);
                 let links_window = make_window("Links", false);
+                let blog_window = make_window_vertical("Blog Posts", false);
+
                 intro_window.show(ctx, |ui| {
                     make_frame_with_padding(20.0)
                     .show(ui, |ui| {
@@ -97,8 +116,8 @@ impl eframe::App for TemplateApp {
                         ui.label("I strive to build performant and composable software. I've recently been interested in event-driven systems, Rust, and programming languages.");
                     });
                 });
-                links_window.show(ctx, |
-                ui| {
+
+                links_window.show(ctx, |ui| {
                     make_frame_with_padding(20.0)
                     .show(ui, |ui| {
                         ui.spacing_mut().item_spacing.y = 10.0;
@@ -126,8 +145,112 @@ impl eframe::App for TemplateApp {
                         });
                     });
                 });
-            });
+
+                blog_window.show(ctx, |ui| {
+                    make_frame_with_padding(20.0)
+                    .show(ui, |ui| {
+                        ui.spacing_mut().item_spacing.y = 10.0;
+                        ui.strong("Notes");
+                        ui.separator();
+                        ui.add_space(8.0); // Add small vertical space after separator
+        
+                        if self.blog_posts.is_empty() {
+                            ui.label("Nothing here yet!");
+                        } else {
+                            ui.horizontal(|ui| {
+                                egui::SidePanel::left("blog_list_panel")
+                                    .resizable(false)
+                                    .default_width(150.0)
+                                    .show_inside(ui, |ui| {
+                                        ui.vertical(|ui| {
+                                            for (index, post) in self.blog_posts.iter().enumerate() {
+                                                if ui.button(&post.title).clicked() {
+                                                    self.current_post_index = Some(index);
+                                                }
+                                                ui.label(RichText::new(&post.date).small().weak());
+                                                ui.add_space(4.0);
+                                            }
+                                        });
+                                    });
+        
+                                ui.add_space(16.0); // Add small horizontal space between sidebar and content
+        
+                                ui.vertical(|ui| {
+                                    if let Some(index) = self.current_post_index {
+                                        let post = &self.blog_posts[index];
+                                        ui.heading(&post.title);
+                                        ui.label(RichText::new(&post.date).italics());
+                                        ui.add_space(5.0);
+                                        egui::ScrollArea::vertical().min_scrolled_height(1200.0).show(ui, |ui| {
+                                            render_markdown(ui, &post.content);
+                                        });
+                                    } else {
+                                        ui.centered_and_justified(|ui| {
+                                            ui.label("Select a post to view");
+                                        });
+                                    }
+                                });
+                            });
+                        }
+                    });
+                });
+            }); 
         });
+    }
+}
+
+fn render_markdown(ui: &mut egui::Ui, markdown: &str) {
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_STRIKETHROUGH);
+    let parser = Parser::new_ext(markdown, options);
+
+    let mut current_heading_level = 6;
+
+    for event in parser {
+        match event {
+            Event::Start(Tag::Heading { level, .. }) => {
+                //current_heading_level = level;
+            }
+            Event::End(TagEnd::Heading { .. }) => {
+                current_heading_level = 6;
+                ui.add_space(8.0);
+            }
+            Event::Start(Tag::Paragraph) => {
+                ui.add_space(4.0);
+            }
+            Event::End(TagEnd::Paragraph) => {
+                ui.add_space(8.0);
+            }
+            Event::Text(text) => {
+                let text_style = match current_heading_level {
+                    1 => TextStyle::Heading,
+                    2 => TextStyle::Name("Heading2".into()),
+                    3 => TextStyle::Name("Heading3".into()),
+                    4 => TextStyle::Name("Heading4".into()),
+                    5 => TextStyle::Name("Heading5".into()),
+                    _ => TextStyle::Body,
+                };
+                ui.label(RichText::new(text.to_string()).text_style(text_style));
+            }
+            Event::Start(Tag::List { .. }) => {
+                ui.add_space(4.0);
+            }
+            Event::End(TagEnd::List { .. }) => {
+                ui.add_space(8.0);
+            }
+            Event::Start(Tag::Item) => {
+                ui.horizontal(|ui| {
+                    ui.label("• ");
+                });
+            }
+            Event::SoftBreak => {
+                ui.add_space(4.0);
+            }
+            Event::HardBreak => {
+                ui.add_space(8.0);
+            }
+            _ => {}
+        }
     }
 }
 
@@ -138,6 +261,16 @@ fn make_window(title: &str, show_title: bool) -> egui::Window<'_> {
         .title_bar(show_title)
         .constrain(true)
         .default_size([600.0, 300.0])
+}
+
+fn make_window_vertical(title: &str, show_title: bool) -> egui::Window<'_> {
+    egui::Window::new(title.to_string())
+        .collapsible(false)
+        .resizable([true, false])
+        .title_bar(show_title)
+        .default_size([400.0, 500.0])  // Taller default size
+        .min_width(200.0)  // Minimum width to prevent too narrow windows
+        .min_height(300.0)  // Minimum height to ensure usability
 }
 
 fn make_frame_with_padding(padding: f32) -> egui::Frame {
