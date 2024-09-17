@@ -61,17 +61,14 @@ impl TemplateApp {
 
         Self {
             blog_posts: blog_posts,
-            current_post_index: if len_blog_posts > 0 { Some(0) } else { None }
+            current_post_index: if len_blog_posts > 0 { Some(0) } else { None },
         }
     }
 
     fn load_blog_posts() -> Vec<BlogPost> {
-        include_blog_posts!(
-            "postgres", "Postgres", "2024-09-16"
-        )
+        include_blog_posts!("postgres", "Postgres", "2024-09-16")
     }
 }
-
 
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -153,7 +150,7 @@ impl eframe::App for TemplateApp {
                         ui.strong("Notes");
                         ui.separator();
                         ui.add_space(8.0); // Add small vertical space after separator
-        
+
                         if self.blog_posts.is_empty() {
                             ui.label("Nothing here yet!");
                         } else {
@@ -172,9 +169,9 @@ impl eframe::App for TemplateApp {
                                             }
                                         });
                                     });
-        
+
                                 ui.add_space(16.0); // Add small horizontal space between sidebar and content
-        
+
                                 ui.vertical(|ui| {
                                     if let Some(index) = self.current_post_index {
                                         let post = &self.blog_posts[index];
@@ -194,7 +191,7 @@ impl eframe::App for TemplateApp {
                         }
                     });
                 });
-            }); 
+            });
         });
     }
 }
@@ -208,9 +205,9 @@ fn render_markdown(ui: &mut egui::Ui, markdown: &str) {
 
     for event in parser {
         match event {
-            Event::Start(Tag::Heading { level, .. }) => {
-                //current_heading_level = level;
-            }
+            // Event::Start(Tag::Heading { level, .. }) => {
+            //     //current_heading_level = level;
+            // }
             Event::End(TagEnd::Heading { .. }) => {
                 current_heading_level = 6;
                 ui.add_space(8.0);
@@ -268,9 +265,9 @@ fn make_window_vertical(title: &str, show_title: bool) -> egui::Window<'_> {
         .collapsible(false)
         .resizable([true, false])
         .title_bar(show_title)
-        .default_size([400.0, 500.0])  // Taller default size
-        .min_width(200.0)  // Minimum width to prevent too narrow windows
-        .min_height(300.0)  // Minimum height to ensure usability
+        .default_size([400.0, 500.0]) // Taller default size
+        .min_width(200.0) // Minimum width to prevent too narrow windows
+        .min_height(300.0) // Minimum height to ensure usability
 }
 
 fn make_frame_with_padding(padding: f32) -> egui::Frame {
