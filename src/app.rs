@@ -1,5 +1,5 @@
-use egui::{Color32, FontFamily::*, FontId, RichText, TextStyle};
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
+use egui::{FontFamily::*, FontId, RichText, TextStyle};
+use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -11,6 +11,7 @@ struct BlogPost {
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct TemplateApp {
     blog_posts: Vec<BlogPost>,
     current_post_index: Option<usize>,
@@ -34,18 +35,6 @@ macro_rules! include_blog_posts {
     };
 }
 
-impl Default for TemplateApp {
-    fn default() -> Self {
-        Self {
-            blog_posts: Vec::new(),
-            current_post_index: None,
-            show_notes_mobile: false,
-            current_content_page: 0,
-            current_page: 0,
-        }
-    }
-}
-
 impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Set up fonts and styles
@@ -66,7 +55,7 @@ impl TemplateApp {
         let len_blog_posts = blog_posts.len();
 
         Self {
-            blog_posts: blog_posts,
+            blog_posts,
             current_post_index: if len_blog_posts > 0 { Some(0) } else { None },
             show_notes_mobile: false,
             current_content_page: 0,
@@ -75,7 +64,14 @@ impl TemplateApp {
     }
 
     fn load_blog_posts() -> Vec<BlogPost> {
-        include_blog_posts!("postgres", "Postgres", "2024-09-16")
+        include_blog_posts!(
+            "reading_list",
+            "Reading List",
+            "2024",
+            "postgres",
+            "Postgres Internals",
+            "2024"
+        )
     }
 }
 
@@ -101,11 +97,31 @@ fn render_intro(ui: &mut egui::Ui) {
 
 fn render_links(ui: &mut egui::Ui) {
     ui.heading("Links");
-    add_link(ui, "Email", "kev.guo123@gmail.com", "mailto:kev.guo123@gmail.com");
-    add_link(ui, "LinkedIn", "@2018kguo", "https://www.linkedin.com/in/2018kguo/");
-    add_link(ui, "GitHub", "@2018kguo", "https://www.github.com/2018kguo/");
+    add_link(
+        ui,
+        "Email",
+        "kev.guo123@gmail.com",
+        "mailto:kev.guo123@gmail.com",
+    );
+    add_link(
+        ui,
+        "LinkedIn",
+        "@2018kguo",
+        "https://www.linkedin.com/in/2018kguo/",
+    );
+    add_link(
+        ui,
+        "GitHub",
+        "@2018kguo",
+        "https://www.github.com/2018kguo/",
+    );
     add_link(ui, "Medium", "@2018kguo", "https://2018kguo.medium.com/");
-    add_link(ui, "Resume", "link", "https://drive.google.com/file/d/1aL_SNToa_CmD92qWKYF2ouFmAGUMPb2Y/view");
+    add_link(
+        ui,
+        "Resume",
+        "link",
+        "https://drive.google.com/file/d/1aL_SNToa_CmD92qWKYF2ouFmAGUMPb2Y/view",
+    );
 }
 
 fn add_link(ui: &mut egui::Ui, label: &str, text: &str, url: &str) {
@@ -157,11 +173,14 @@ fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui, lines_per_page: u
         let start_line = app.current_content_page * lines_per_page;
         let end_line = (start_line + lines_per_page).min(content_lines.len());
 
-        egui::ScrollArea::vertical().min_scrolled_height(1000.0).show(ui, |ui| {
-            let content_slice = &content_lines[start_line..end_line];
-            let page_content = content_slice.join("\n");
-            render_markdown(ui, &page_content);
-        });
+        egui::ScrollArea::vertical()
+            .min_scrolled_height(1000.0)
+            .show(ui, |ui| {
+                let content_slice = &content_lines[start_line..end_line];
+                let page_content = content_slice.join("\n");
+                let mut cache = CommonMarkCache::default();
+                CommonMarkViewer::new("viewer").show(ui, &mut cache, &page_content);
+            });
 
         ui.add_space(10.0);
         ui.horizontal(|ui| {
@@ -169,7 +188,11 @@ fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui, lines_per_page: u
                 if ui.button("◀").clicked() && app.current_content_page > 0 {
                     app.current_content_page -= 1;
                 }
-                ui.label(format!("Page {}/{}", app.current_content_page + 1, total_pages));
+                ui.label(format!(
+                    "Page {}/{}",
+                    app.current_content_page + 1,
+                    total_pages
+                ));
                 if ui.button("▶").clicked() && app.current_content_page < total_pages - 1 {
                     app.current_content_page += 1;
                 }
@@ -226,20 +249,26 @@ fn desktop_layout(app: &mut TemplateApp, ctx: &egui::Context) {
                             if app.blog_posts.is_empty() {
                                 ui.label("Nothing here yet!");
                             } else {
-                                ui.horizontal(|ui| {
-                                    egui::SidePanel::left("blog_list_panel")
-                                        .resizable(false)
-                                        .default_width(150.0)
-                                        .show_inside(ui, |ui| {
+                                egui::SidePanel::left("blog_list_panel")
+                                    .resizable(false)
+                                    .default_width(150.0)
+                                    .min_width(150.0)
+                                    .show_inside(ui, |ui| {
+                                        egui::ScrollArea::vertical().show(ui, |ui| {
                                             ui.vertical(|ui| {
                                                 show_blog_list(app, ui);
                                             });
                                         });
-
-                                    ui.add_space(16.0);
-                                    ui.vertical(|ui| {
-                                        show_blog_content(app, ui, 30);
                                     });
+
+                                ui.add_space(16.0);
+
+                                egui::CentralPanel::default().show_inside(ui, |ui| {
+                                    egui::ScrollArea::vertical()
+                                        .min_scrolled_height(400.0)
+                                        .show(ui, |ui| {
+                                            show_blog_content(app, ui, 30);
+                                        });
                                 });
                             }
                         });
@@ -255,7 +284,11 @@ fn mobile_layout(app: &mut TemplateApp, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.heading("Kevin Guo");
             ui.add_space(ui.available_width() - 50.0);
-            let button_text = if app.show_notes_mobile { "Close" } else { "Notes" };
+            let button_text = if app.show_notes_mobile {
+                "Close"
+            } else {
+                "Notes"
+            };
             if ui.button(button_text).clicked() {
                 app.show_notes_mobile = !app.show_notes_mobile;
             }
@@ -287,7 +320,7 @@ fn show_notes_panel(app: &mut TemplateApp, ctx: &egui::Context) {
             } else {
                 show_blog_list(app, ui);
                 ui.add_space(20.0);
-                show_blog_content(app, ui, 15);  // Using fewer lines per page for mobile
+                show_blog_content(app, ui, 15); // Using fewer lines per page for mobile
             }
         });
     });
@@ -317,88 +350,6 @@ impl eframe::App for TemplateApp {
             desktop_layout(self, ctx);
         } else {
             mobile_layout(self, ctx);
-        }
-    }
-}
-
-fn render_markdown(ui: &mut egui::Ui, markdown: &str) {
-    let mut options = Options::empty();
-    options.insert(Options::ENABLE_STRIKETHROUGH);
-    let parser = Parser::new_ext(markdown, options);
-
-    let mut current_style = TextStyle::Small;
-    let mut is_bold = false;
-    let mut is_italic = false;
-    let mut is_strikethrough = false;
-
-    for event in parser {
-        match event {
-            Event::Start(tag) => match tag {
-                Tag::Heading { level, .. } => {
-                    current_style = match level {
-                        _ => TextStyle::Monospace,
-                    };
-                    is_bold = false;
-                }
-                Tag::Paragraph => ui.add_space(4.0),
-                Tag::Emphasis => is_italic = true,
-                Tag::Strong => is_bold = true,
-                Tag::Strikethrough => is_strikethrough = true,
-                // Tag::List(_) => {
-                //     list_level += 1;
-                //     ui.add_space(4.0);
-                // }
-                // Tag::Item => {
-                //     ui.add_space(4.0 + 16.0 * list_level as f32);
-                // }
-                Tag::CodeBlock(_) => {
-                    ui.add_space(4.0);
-                    current_style = TextStyle::Small;
-                }
-                _ => {}
-            },
-            Event::End(tag) => match tag {
-                TagEnd::Heading(_) => {
-                    current_style = TextStyle::Small;
-                    is_bold = false;
-                    ui.add_space(8.0);
-                }
-                TagEnd::Paragraph => ui.add_space(8.0),
-                TagEnd::Emphasis => is_italic = false,
-                TagEnd::Strong => is_bold = false,
-                TagEnd::Strikethrough => is_strikethrough = false,
-                TagEnd::List(_) => {
-                    ui.add_space(8.0);
-                }
-                TagEnd::CodeBlock => {
-                    current_style = TextStyle::Small;
-                    ui.add_space(4.0);
-                }
-                _ => {}
-            },
-            Event::Text(text) => {
-                let mut rich_text =
-                    RichText::new(text.to_string()).text_style(current_style.clone());
-                if is_bold {
-                    rich_text = rich_text.strong();
-                }
-                if is_italic {
-                    rich_text = rich_text.italics();
-                }
-                if is_strikethrough {
-                    rich_text = rich_text.strikethrough();
-                }
-                ui.label(rich_text);
-            }
-            Event::Code(code) => {
-                let rich_text = RichText::new(code.to_string())
-                    .text_style(TextStyle::Small)
-                    .background_color(Color32::from_gray(240));
-                ui.label(rich_text);
-            }
-            Event::SoftBreak => ui.add_space(4.0),
-            Event::HardBreak => ui.add_space(8.0),
-            _ => {}
         }
     }
 }

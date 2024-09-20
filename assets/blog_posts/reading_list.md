@@ -1,0 +1,2 @@
+- [Postgres Internals](https://www.interdb.jp/pg/index.html) 
+- [Rust SIMD beginners guide](https://github.com/rust-lang/portable-simd/blob/master/beginners-guide.md)
