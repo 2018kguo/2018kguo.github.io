@@ -16,9 +16,4 @@ selectivity of query predicates is used as a factor during cost estimation and e
 
 SQL statement lifecycle: parse -> analyze to query tree -> rewrite query tree -> generate plan -> execute plan 
 
-parsenodes.h defines the tree structure for the query tree
-
-costsize.c defines functions that the planner uses for query optimization, i.e cost_seqscan()
-
-selectivity of query predicates is used as a factor during cost estimation and estimated w/ info from pg_stats. either calculated by referencing the most common values for a column or histogram_bounds for ints/floats 
-SQL statement lifecycle: parse -> analyze to query tree -> rewrite query tree -> generate plan -> execute plan 
+Something like `Sort Method: external sort  Disk: 10000kB` in the explain output means that a temporary file was created for joining/sorting. Temporary files are created in base/pg_tmp
