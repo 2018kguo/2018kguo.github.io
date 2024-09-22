@@ -1,2 +1,5 @@
 - [Postgres Internals](https://www.interdb.jp/pg/index.html) 
 - [Rust SIMD beginners guide](https://github.com/rust-lang/portable-simd/blob/master/beginners-guide.md)
+- [LXR Garbage Collection](https://arxiv.org/pdf/2210.17175)
+- [Homegrown bytecode interpreters](https://medium.com/bumble-tech/home-grown-bytecode-interpreters-51e12d59b25c)
+- [Implementing regular expressions](https://swtch.com/~rsc/regexp/)

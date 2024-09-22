@@ -69,7 +69,10 @@ impl TemplateApp {
             "Reading List",
             "2024",
             "postgres",
-            "Postgres Internals",
+            "Postgres",
+            "2024",
+            "interpreters",
+            "Interpreters",
             "2024"
         )
     }
@@ -366,11 +369,11 @@ fn make_window(title: &str, show_title: bool) -> egui::Window<'_> {
 fn make_window_vertical(title: &str, show_title: bool) -> egui::Window<'_> {
     egui::Window::new(title.to_string())
         .collapsible(false)
-        .resizable([true, false])
+        .resizable(true)
         .title_bar(show_title)
-        .default_size([1000.0, 500.0]) // Taller default size
+        .default_size([1000.0, 800.0]) // Taller default size
         .min_width(1000.0) // Minimum width to prevent too narrow windows
-        .min_height(300.0) // Minimum height to ensure usability
+        .min_height(800.0) // Minimum height to ensure usability
 }
 
 fn make_frame_with_padding(padding: f32) -> egui::Frame {
