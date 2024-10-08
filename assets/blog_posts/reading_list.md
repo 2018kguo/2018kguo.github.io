@@ -3,3 +3,7 @@
 - [LXR Garbage Collection](https://arxiv.org/pdf/2210.17175)
 - [Homegrown bytecode interpreters](https://medium.com/bumble-tech/home-grown-bytecode-interpreters-51e12d59b25c)
 - [Implementing regular expressions](https://swtch.com/~rsc/regexp/)
+- [Paper on soft updates in file systems](https://users.ece.cmu.edu/~ganger/papers/osdi94.pdf)
+- [Rewriting S3 Shardstore](https://assets.amazon.science/77/5e/4a7c238f4ce890efdc325df83263/using-lightweight-formal-methods-to-validate-a-key-value-storage-node-in-amazon-s3-2.pdf)
+- [Practical Deep Learning For Coders](https://course.fast.ai/)
+- Types and Programming Languages (Book)
