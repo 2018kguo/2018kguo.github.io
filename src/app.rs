@@ -67,7 +67,10 @@ impl TemplateApp {
         include_blog_posts!(
             "reading_list",
             "Reading List",
-            "2024",
+            "",
+            "pub_links",
+            "Misc Links",
+            "",
             "postgres",
             "Postgres",
             "2024",
@@ -99,7 +102,6 @@ fn render_intro(ui: &mut egui::Ui) {
 }
 
 fn render_links(ui: &mut egui::Ui) {
-    ui.heading("Links");
     add_link(
         ui,
         "Email",
@@ -146,7 +148,9 @@ fn show_blog_list(app: &mut TemplateApp, ui: &mut egui::Ui) {
             app.current_post_index = Some(start_index + index);
             app.current_content_page = 0;
         }
-        ui.label(RichText::new(&post.date).small().weak());
+        if &post.date.len() > &0 {
+            ui.label(RichText::new(&post.date).small().weak());
+        }
         ui.add_space(4.0);
     }
 
@@ -167,9 +171,16 @@ fn show_blog_list(app: &mut TemplateApp, ui: &mut egui::Ui) {
 fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui, lines_per_page: usize) {
     if let Some(index) = app.current_post_index {
         let post = &app.blog_posts[index];
-        ui.heading(&post.title);
-        ui.label(RichText::new(&post.date).italics());
-        ui.add_space(5.0);
+        ui.horizontal(|ui| {
+            ui.add_space(10.0); // Adds 10 pixels of horizontal space
+            ui.vertical(|ui| {
+                ui.heading(&post.title);
+                if &post.date.len() > &0 {
+                    ui.label(RichText::new(&post.date).italics());
+                }
+            });
+        });
+        ui.add_space(2.0);
 
         let content_lines: Vec<&str> = post.content.split('\n').collect();
         let total_pages = (content_lines.len() + lines_per_page - 1) / lines_per_page;

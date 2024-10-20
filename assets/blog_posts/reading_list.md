@@ -7,3 +7,4 @@
 - [Rewriting S3 Shardstore](https://assets.amazon.science/77/5e/4a7c238f4ce890efdc325df83263/using-lightweight-formal-methods-to-validate-a-key-value-storage-node-in-amazon-s3-2.pdf)
 - [Practical Deep Learning For Coders](https://course.fast.ai/)
 - Types and Programming Languages (Book)
+- [Crafting Interpreters](https://craftinginterpreters.com/)
