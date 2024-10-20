@@ -1,0 +1,1 @@
+- [Mitchell Hashimoto On Building Large Projects](https://mitchellh.com/writing/building-large-technical-projects)
