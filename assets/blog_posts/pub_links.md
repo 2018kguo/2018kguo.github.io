@@ -1,1 +1,3 @@
 - [Mitchell Hashimoto On Building Large Projects](https://mitchellh.com/writing/building-large-technical-projects)
+- [Armin Ronacher's Blog](https://lucumr.pocoo.org/)
+- [Jack O' Connor's Blog (Great resource for Rust)](https://jacko.io/)
