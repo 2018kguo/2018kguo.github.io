@@ -35,6 +35,22 @@ macro_rules! include_blog_posts {
 
 impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        // Bundle JetBrains Mono Medium as the monospace face — heavier stroke than egui's default Hack
+        let mut fonts = egui::FontDefinitions::default();
+        fonts.font_data.insert(
+            "jetbrains_mono".to_owned(),
+            egui::FontData::from_static(include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/assets/fonts/JetBrainsMono-Medium.ttf"
+            ))),
+        );
+        fonts
+            .families
+            .entry(Monospace)
+            .or_default()
+            .insert(0, "jetbrains_mono".to_owned());
+        cc.egui_ctx.set_fonts(fonts);
+
         // Set up fonts and styles
         let mut visuals = egui::Visuals::light();
         // Darker body text — egui's default light gray reads as thin/faint on white
