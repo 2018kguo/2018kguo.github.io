@@ -36,7 +36,10 @@ macro_rules! include_blog_posts {
 impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Set up fonts and styles
-        cc.egui_ctx.set_visuals(egui::Visuals::light());
+        let mut visuals = egui::Visuals::light();
+        // Darker body text — egui's default light gray reads as thin/faint on white
+        visuals.override_text_color = Some(egui::Color32::from_gray(25));
+        cc.egui_ctx.set_visuals(visuals);
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
             (TextStyle::Heading, FontId::new(19.0, Monospace)),
