@@ -303,11 +303,22 @@ fn paint_background(life: &mut Life, ctx: &egui::Context, painter: &egui::Painte
         life.last_step = now;
     }
 
-    // Base wallpaper.
-    painter.rect_filled(rect, 0.0, egui::Color32::from_gray(250));
+    // Theme-aware, faintly blue-tinted. We paint over the panel's own fill (no base rect)
+    // so the wallpaper tracks light/dark automatically.
+    let dark = ctx.style().visuals.dark_mode;
+    let (dot, cell_col) = if dark {
+        (
+            egui::Color32::from_rgb(42, 47, 62),
+            egui::Color32::from_rgb(31, 34, 45),
+        )
+    } else {
+        (
+            egui::Color32::from_rgb(229, 233, 243),
+            egui::Color32::from_rgb(240, 242, 249),
+        )
+    };
 
     // Live cells: barely-there rounded squares.
-    let cell_col = egui::Color32::from_gray(234);
     for y in 0..rows {
         for x in 0..cols {
             if life.cells[y * cols + x] {
@@ -322,7 +333,6 @@ fn paint_background(life: &mut Life, ctx: &egui::Context, painter: &egui::Painte
     }
 
     // Dot grid on top.
-    let dot = egui::Color32::from_gray(219);
     for y in 0..rows {
         for x in 0..cols {
             let p = rect.min + egui::vec2(x as f32 * LIFE_CELL, y as f32 * LIFE_CELL);
