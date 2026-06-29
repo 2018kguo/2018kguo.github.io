@@ -15,8 +15,6 @@ struct BlogPost {
 pub struct TemplateApp {
     blog_posts: Vec<BlogPost>,
     current_post_index: Option<usize>,
-    current_page: usize,
-    current_content_page: usize,
     show_notes_mobile: bool,
 }
 
@@ -58,8 +56,6 @@ impl TemplateApp {
             blog_posts,
             current_post_index: if len_blog_posts > 0 { Some(0) } else { None },
             show_notes_mobile: false,
-            current_content_page: 0,
-            current_page: 0,
         }
     }
 
@@ -146,38 +142,18 @@ fn add_link(ui: &mut egui::Ui, label: &str, text: &str, url: &str) {
 }
 
 fn show_blog_list(app: &mut TemplateApp, ui: &mut egui::Ui) {
-    const ITEMS_PER_PAGE: usize = 5;
-
-    let total_pages = (app.blog_posts.len() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
-    let start_index = app.current_page * ITEMS_PER_PAGE;
-    let end_index = (start_index + ITEMS_PER_PAGE).min(app.blog_posts.len());
-
-    for (index, post) in app.blog_posts[start_index..end_index].iter().enumerate() {
+    for (index, post) in app.blog_posts.iter().enumerate() {
         if ui.button(&post.title).clicked() {
-            app.current_post_index = Some(start_index + index);
-            app.current_content_page = 0;
+            app.current_post_index = Some(index);
         }
         if &post.date.len() > &0 {
             ui.label(RichText::new(&post.date).small().weak());
         }
         ui.add_space(4.0);
     }
-
-    ui.add_space(10.0);
-    ui.horizontal(|ui| {
-        if total_pages > 1 {
-            if ui.button("◀").clicked() && app.current_page > 0 {
-                app.current_page -= 1;
-            }
-            ui.label(format!("{}/{}", app.current_page + 1, total_pages));
-            if ui.button("▶").clicked() && app.current_page < total_pages - 1 {
-                app.current_page += 1;
-            }
-        }
-    });
 }
 
-fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui, lines_per_page: usize) {
+fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui) {
     if let Some(index) = app.current_post_index {
         let post = &app.blog_posts[index];
         ui.horizontal(|ui| {
@@ -191,36 +167,8 @@ fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui, lines_per_page: u
         });
         ui.add_space(2.0);
 
-        let content_lines: Vec<&str> = post.content.split('\n').collect();
-        let total_pages = (content_lines.len() + lines_per_page - 1) / lines_per_page;
-        let start_line = app.current_content_page * lines_per_page;
-        let end_line = (start_line + lines_per_page).min(content_lines.len());
-
-        egui::ScrollArea::vertical()
-            .min_scrolled_height(1000.0)
-            .show(ui, |ui| {
-                let content_slice = &content_lines[start_line..end_line];
-                let page_content = content_slice.join("\n");
-                let mut cache = CommonMarkCache::default();
-                CommonMarkViewer::new("viewer").show(ui, &mut cache, &page_content);
-            });
-
-        ui.add_space(10.0);
-        ui.horizontal(|ui| {
-            if total_pages > 1 {
-                if ui.button("◀").clicked() && app.current_content_page > 0 {
-                    app.current_content_page -= 1;
-                }
-                ui.label(format!(
-                    "Page {}/{}",
-                    app.current_content_page + 1,
-                    total_pages
-                ));
-                if ui.button("▶").clicked() && app.current_content_page < total_pages - 1 {
-                    app.current_content_page += 1;
-                }
-            }
-        });
+        let mut cache = CommonMarkCache::default();
+        CommonMarkViewer::new("viewer").show(ui, &mut cache, &post.content);
     } else {
         ui.centered_and_justified(|ui| {
             ui.label("Select a post to view");
@@ -290,7 +238,7 @@ fn desktop_layout(app: &mut TemplateApp, ctx: &egui::Context) {
                                     egui::ScrollArea::vertical()
                                         .min_scrolled_height(400.0)
                                         .show(ui, |ui| {
-                                            show_blog_content(app, ui, 30);
+                                            show_blog_content(app, ui);
                                         });
                                 });
                             }
@@ -343,7 +291,7 @@ fn show_notes_panel(app: &mut TemplateApp, ctx: &egui::Context) {
             } else {
                 show_blog_list(app, ui);
                 ui.add_space(20.0);
-                show_blog_content(app, ui, 15); // Using fewer lines per page for mobile
+                show_blog_content(app, ui);
             }
         });
     });
