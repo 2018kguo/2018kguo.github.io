@@ -65,6 +65,15 @@ impl TemplateApp {
 
     fn load_blog_posts() -> Vec<BlogPost> {
         include_blog_posts!(
+            "ramp_career",
+            "Notes after Ramp",
+            "2026",
+            "llm_math",
+            "A layman's view of LLMs",
+            "2026",
+            "emulators",
+            "Feature emulators",
+            "2026",
             "reading_list",
             "Reading List",
             "",
@@ -97,7 +106,7 @@ fn is_mobile_or_small_screen(ctx: &egui::Context) -> bool {
 // Shared content functions
 fn render_intro(ui: &mut egui::Ui) {
     ui.heading("About Me");
-    ui.label("I'm a software engineer based in NYC. I currently work at Ramp, where I build tools to help finance teams manage their expenses and automate the tedious parts of their job.");
+    ui.label("I'm a software engineer based in NYC. I was previously at Ramp and am now working on something new.");
     ui.label("I strive to build performant and composable software. I've recently been interested in event-driven systems, Rust, and programming languages.");
 }
 
