@@ -54,10 +54,7 @@ impl TemplateApp {
         cc.egui_ctx.set_fonts(fonts);
 
         // Set up fonts and styles
-        let mut visuals = egui::Visuals::light();
-        // Darker body text — egui's default light gray reads as thin/faint on white
-        visuals.override_text_color = Some(egui::Color32::from_gray(45));
-        cc.egui_ctx.set_visuals(visuals);
+        cc.egui_ctx.set_visuals(egui::Visuals::light());
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
             (TextStyle::Heading, FontId::new(19.0, Monospace)),
@@ -465,8 +462,23 @@ fn show_notes_panel(app: &mut TemplateApp, ctx: &egui::Context) {
     });
 }
 
+// Re-applied every frame so it survives the Light/Dark toggle (which resets visuals).
+fn apply_theme(ctx: &egui::Context) {
+    let mut v = ctx.style().visuals.clone();
+    if v.dark_mode {
+        v.override_text_color = Some(egui::Color32::from_gray(205));
+        v.selection.bg_fill = egui::Color32::from_rgb(45, 66, 104); // muted blue
+    } else {
+        // Darker body text — egui's default light gray reads as thin/faint on white.
+        v.override_text_color = Some(egui::Color32::from_gray(45));
+        v.selection.bg_fill = egui::Color32::from_rgb(189, 212, 243); // soft blue, readable
+    }
+    ctx.set_visuals(v);
+}
+
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        apply_theme(ctx);
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
