@@ -58,7 +58,7 @@ It's not always resolution in a good way. Sometimes the thing self-resolves beca
 
 ## Why I left
 
-I didn't leave because I was unhappy. Honestly I couldn't tell you exactly what I'm walking toward — I don't know precisely what the different learning curve is.
+I didn't leave because I was unhappy. Honestly I couldn't tell you exactly what I'm walking toward.
 
 The way I actually made the decision was to picture myself in five or ten years and ask whether I'd be fine having not done this. The answer was no. So I took it, even though I'm unsure in the moment. Being unsure now is a much smaller cost than the version of me later who never tried.
 
