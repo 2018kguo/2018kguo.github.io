@@ -64,8 +64,8 @@ The way I actually made the decision was to picture myself in five or ten years 
 
 I just turned 26. It's a strange age — it feels like maximum optionality, but I still feel like a kid in a lot of ways. Four years at one place is a long time when you're 26, and it didn't feel right to spend more of that window doing the same kind of work inside the same machine.
 
-Not because the machine was bad. I think what I want is the parts that are hidden once the machine already works: finding the problem, deciding what to build, getting the first users, being wrong without a big org quietly absorbing the cost. Whether my own taste is any good with less scaffolding holding it up. But I'm guessing at the specifics, and that's fine.
+Not because the machine was bad. By the time I left, most of what I did happened inside a system that already worked — the customers were there, the infra was there, the playbook mostly existed. I got curious about the part that happens before any of that, and whether I'm any good at it.
 
-A good company gives you a lot — brand, distribution, coworkers, customers, infra, shared context. Leaving means giving all of that up. That tradeoff was the whole reason to do it.
+What I want out of the next thing isn't complicated. Build something. Be near the start of it. Do it with people I like, and feel like myself while it happens. That's about as specified as it gets right now, and I've made my peace with that.
 
-Ramp gave me a clear picture of what high-quality product engineering looks like. Now I want to see what happens with fewer of the defaults filled in.
+If I'm honest the feeling isn't excitement, it's relief — the specific relief of finally acting on a gut instinct instead of sitting on it. I tend to treat my life and my work as the same project, so the thing I'm actually scared of isn't failing at a company. It's arriving at some later version of myself who never went to find out, and being disappointed in him. Leaving was mostly about not becoming that guy.
