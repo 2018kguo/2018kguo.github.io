@@ -54,7 +54,7 @@ impl TemplateApp {
         // Set up fonts and styles
         let mut visuals = egui::Visuals::light();
         // Darker body text — egui's default light gray reads as thin/faint on white
-        visuals.override_text_color = Some(egui::Color32::from_gray(25));
+        visuals.override_text_color = Some(egui::Color32::from_gray(45));
         cc.egui_ctx.set_visuals(visuals);
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
@@ -186,8 +186,8 @@ fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui) {
         });
         ui.add_space(2.0);
 
-        // ponytail: cap line length (~700px) for readability; full-width monospace is too wide to read
-        ui.set_max_width(700.0);
+        // ponytail: cap line length (~760px) for readability; full-width monospace is too wide to read
+        ui.set_max_width(760.0);
         ui.spacing_mut().item_spacing.y = 8.0; // a little more air between paragraphs
         let mut cache = CommonMarkCache::default();
         CommonMarkViewer::new("viewer").show(ui, &mut cache, &post.content);
