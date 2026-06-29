@@ -39,8 +39,8 @@ impl TemplateApp {
         cc.egui_ctx.set_visuals(egui::Visuals::light());
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
-            (TextStyle::Heading, FontId::new(18.0, Monospace)),
-            (TextStyle::Body, FontId::new(16.0, Monospace)),
+            (TextStyle::Heading, FontId::new(19.0, Monospace)),
+            (TextStyle::Body, FontId::new(17.0, Monospace)),
             (TextStyle::Monospace, FontId::new(14.0, Monospace)),
             (TextStyle::Button, FontId::new(14.0, Monospace)),
             (TextStyle::Small, FontId::new(13.0, Monospace)),
@@ -167,6 +167,9 @@ fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui) {
         });
         ui.add_space(2.0);
 
+        // ponytail: cap line length (~700px) for readability; full-width monospace is too wide to read
+        ui.set_max_width(700.0);
+        ui.spacing_mut().item_spacing.y = 8.0; // a little more air between paragraphs
         let mut cache = CommonMarkCache::default();
         CommonMarkViewer::new("viewer").show(ui, &mut cache, &post.content);
     } else {
