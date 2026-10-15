@@ -4,68 +4,52 @@ I recently left Ramp after about four years. Some notes before I forget what it 
 
 ## The company changed a lot
 
-When I joined, Ramp was still much closer to "a better corporate card" than the finance platform it is now. Pricing wasn't figured out. The product surface wasn't figured out. A lot of the roadmap came from watching what customers were actually trying to do around the card and following them there.
+When I joined, Ramp was much closer to a better corporate card than the finance platform it is now. Pricing and the product were still being figured out. A lot of the roadmap came from watching what customers did around the card: expenses, reimbursements, bill pay, procurement, and the accounting work underneath all of it.
 
-From the outside a company can look like it had the whole plan from the start. From the inside it felt more like a series of smart adjacent moves: card, then expenses, then reimbursements, then bill pay, then procurement, then the accounting workflows underneath all of it.
+From the outside, it's easy to imagine that was the plan all along. It didn't feel that way inside. We'd get one thing working and learn enough to try the next. I came away thinking you could start with something fairly narrow and let it teach you what to build next.
 
-The thing that stuck with me is that you don't need the whole company in your head on day one. You need a wedge that teaches you where to go next. Ambition can expand after the first one lands.
+## The people
 
-## A room full of young people
+A lot of the best people I worked with were young. They hadn't spent years being told how things were supposed to work. Someone would notice a problem and try to fix it, including things a more experienced person might have talked themselves out of attempting.
 
-A lot of the best people I worked with were young, and I don't think that was an accident. People tend to do their sharpest work early — mathematicians are famous for it, but it's true a lot more broadly. Part of it is raw capability, but a bigger part is that young people haven't been conditioned yet. They haven't spent years inside a company absorbing how things are "supposed" to be done, so they don't carry the defaults and learned helplessness that come with that. They'll just try the obvious thing because nobody told them it was naive.
+I liked being around that. People cared about the details, caught each other's mistakes, and didn't wait to be assigned everything.
 
-Early Ramp felt like an experiment in putting a bunch of those people in one room. High ownership, low tolerance for fake work, nobody waiting to be told what to do. Someone would notice a problem and just carry it.
-
-The density also made speed feel less reckless. You can move fast when the people around you catch the mistakes, write things down, and actually care about the details.
-
-## Small teams
-
-The best work I did was in small groups, and I think it's mostly because coordination stops being the job. In a small group everyone knows who is carrying what without a meeting about it. Social pressure works because it's legible. Trust builds faster because you see each other's work directly. Past some size, all of that gets replaced by process, and the process becomes the thing you spend your day on.
+The best work I did was in small groups. Everyone knew who was doing what because we saw each other's work. As a team gets bigger, keeping track takes more effort. Meetings and process start filling time that used to go toward building.
 
 ## Boring software
 
-I learned to respect boring software here.
+Expense management, approvals, accounting syncs, invoices, policy controls. I didn't expect to care so much about this stuff.
 
-Expense management, approvals, accounting syncs, invoices, policy controls. None of it is glamorous from the outside. But companies run on this stuff, and the quality lives entirely in the parts nobody demos: the permission edge case, the migration, the empty state, the loading state. If a flow is confusing, someone wastes ten minutes every week forever. If a permission is wrong, a finance team invents a manual workaround and never tells you.
-
-Most good B2B software is just removing small frictions from workflows that already exist. That's less exciting and more durable than it sounds.
+A lot of the work was in things nobody would demo: a permission edge case, a migration, an empty state. But if an approval flow is confusing, someone wastes time on it every week. If the permissions don't fit how a finance team works, they invent a manual workaround. Getting those details right was satisfying.
 
 ## Fun matters
 
-This sounds cheesy but I think it's true. Hard work over a week is easy. Hard work over years is much harder, and fun is part of what makes the second one possible.
+Liking the people and enjoying the day-to-day work made it easier to keep working hard over several years.
 
-I don't mean office perks. The sad version of fun is when perks get used as a substitute for actual energy. The real version is that the people are sharp, the work has momentum, the wins are visible, and the jokes are good. There's a shared sense that the thing is alive.
-
-Without that, work becomes pure discipline. You can run on discipline for a while, but it's hard to sustain for years.
+For me, the fun came from people being sharp and funny, getting excited when something shipped, and caring about the same problems. I had a lot more energy in that environment than I could have supplied through discipline alone.
 
 ## Taste
 
-If I had to name the biggest thing I got from being there early, it's taste.
+I got to watch a lot of launches. Some went well. Others confused customers in ways I hadn't expected. There were dashboards nobody opened and dashboards people used all day.
 
-You see good launches, bad launches, confusing launches. You see customers misunderstand something you were sure was obvious. You see dashboards nobody opens and dashboards people live in. After enough reps you start recognizing the shape of a good thing before you can explain why.
-
-That's the real argument for working somewhere strong early. You borrow other people's taste until you've built your own.
+After enough of those, I started catching things earlier: a flow that asked too much of the user, an explanation that wouldn't make sense to someone seeing it for the first time. Working with people who noticed those things before I did helped me learn what to look for.
 
 ## Most things resolved themselves
 
-The thing I least expected is how trivial the big problems looked in hindsight.
+A lot of problems that felt enormous at the time are hard to reconstruct now. Closing a particular customer. A technical problem that ate a week. An argument about where the product needed to go.
 
-At the time, a lot of things felt enormous. Closing a particular customer. Some gnarly technical problem that ate a week. A long thesis about where the product had to go. The kind of thing you'd lose a weekend to.
+The customer closed, or didn't and it mattered less than I thought. The technical problem got solved, got routed around, or stopped being relevant. A product bet was half right and we moved on from the other half.
 
-Most of them just resolved. The customer closed, or didn't and it didn't matter. The technical problem got solved, or got routed around, or quietly stopped being relevant. The grand product thesis turned out to be half right and nobody remembered the other half. A year later I'd struggle to even reconstruct why something had felt so urgent.
-
-It's not always resolution in a good way. Sometimes the thing self-resolves because the company moved on, or because the stakes were never as high as they felt in the moment, or because everyone just forgot. But the pattern was consistent enough that it changed how I hold problems now. Very few of them deserve the weight you give them while you're inside them.
+Sometimes nothing was really resolved; the company had just moved on. I still find it useful to remember how often that happened when I'm losing a weekend to something that feels urgent.
 
 ## Why I left
 
-I didn't leave because I was unhappy. Honestly I couldn't tell you exactly what I'm walking toward.
+I wasn't unhappy. I also couldn't tell you exactly what I was walking toward.
 
-The way I actually made the decision was to picture myself in five or ten years and ask whether I'd be fine having not done this. The answer was no. So I took it, even though I'm unsure in the moment. Being unsure now is a much smaller cost than the version of me later who never tried.
+I pictured myself in five or ten years and asked whether I'd be fine having never tried to build something of my own. I wouldn't. That was enough to make the decision, even though I was unsure about it.
 
-I just turned 26. It's a strange age — it feels like maximum optionality, but I still feel like a kid in a lot of ways. Four years at one place is a long time when you're 26, and it didn't feel right to spend more of that window doing the same kind of work inside the same machine.
+I just turned 26. I still feel like a kid in a lot of ways, but four years is a long time at this age. By the end, I was working inside a company where the customers, infrastructure, and much of the playbook were already there. I wanted to find out whether I was any good at the part before that.
 
-Not because the machine was bad. By the time I left, most of what I did happened inside a system that already worked — the customers were there, the infra was there, the playbook mostly existed. I got curious about the part that happens before any of that, and whether I'm any good at it.
+I want to build something, be near the start of it, and do it with people I like. I don't have it specified much beyond that.
 
-What I want out of the next thing isn't complicated. Build something. Be near the start of it. Do it with people I like, and feel like myself while it happens. That's about as specified as it gets right now, and I've made my peace with that.
-
-If I'm honest the feeling isn't excitement, it's relief — the specific relief of finally acting on a gut instinct instead of sitting on it. I tend to treat my life and my work as the same project, so the thing I'm actually scared of isn't failing at a company. It's arriving at some later version of myself who never went to find out, and being disappointed in him. Leaving was mostly about not becoming that guy.
+Mostly I felt relieved when I left. I'd been sitting on the instinct for a while. I'm scared of failing, but I'd feel worse about never finding out.

@@ -1,114 +1,53 @@
 # A layman's view of LLMs
 
-The single most useful idea for understanding LLMs is this: every answer runs on a fixed budget.
+The detail that helped me understand LLMs was how they spend compute. A model generates text a token at a time. Each step runs through the model's layers; a harder question doesn't give that step extra layers to work with.
 
-A forward pass through the model does a set amount of work. That amount is decided by the model size, how long your input is, and how many tokens it generates. It is *not* decided by how hard your question is. The model does not notice that a question is difficult and quietly spend 100x more effort on it.
+The total budget can vary a lot. A system can generate more reasoning tokens, try several answers, use tools, or hand work to another model. Those choices matter because a single pass has limited room to compute an answer.
 
-Ask this:
+## Compute per token
 
-> what is the capital of France?
+Suppose I ask for a familiar fact, then ask for the result of applying a hash function 500 times. Both prompts ask the model to finish a string. The fact might be easy to recall from training. The hash requires a sequence of exact operations that the model can't reliably squeeze into one pass.
 
-then ask this:
+Writing intermediate steps gives it more passes. Each generated token becomes input to the next, so a scratchpad lets a computation extend across tokens. That can help with a difficult problem, though it doesn't guarantee the steps are correct. For hashing, I'd want it to run code.
 
-> prove this obscure theorem from first principles
+This is how I think about reasoning budgets and tool use: ways to give the system more work to do before it commits to an answer. The cost shows up in latency and tokens.
 
-The second one is much harder for me. To the model, both are just "produce the next token," running the same machinery at the same cost per token. The only way to throw more compute at the hard one is to *give* it more: let it write more tokens, take more attempts, call tools, use a bigger model, hand pieces to subagents. Left alone, a hard prompt does not buy itself more thinking time.
+## Attention and long inputs
 
-Almost everything below is a consequence of that one fact.
+In dense self-attention, tokens compare information with other tokens in the sequence. The number of possible pairs grows quadratically: double the sequence length and there are roughly four times as many pairs. That applies to the attention work, not necessarily the cost of the whole model.
 
-## Fixed compute per token
+[FlashAttention](https://arxiv.org/abs/2205.14135) computes exact attention while reducing transfers between levels of GPU memory. The arithmetic matters, but so does how the data moves through the hardware.
 
-There's a sharp example in [LLMs and computation complexity](https://www.lesswrong.com/posts/XNBZPbxyYhmoqD87F/llms-and-computation-complexity):
+Long context also has a quality problem. Fitting a document into the window doesn't establish that the model will use every part well. [Lost in the Middle](https://arxiv.org/abs/2307.03172) found that the models it tested often did worse when relevant information sat in the middle of a long input. I wouldn't treat that result as a verdict on every newer model, but it's a useful reason to test retrieval rather than assume it works.
 
-- "The richest country in North America is the United States of ____"
-- "The SHA1 of `abc123`, iterated 500 times, is ____"
+For a large collection of documents, I usually want to compare a few approaches: retrieve relevant passages, process sections separately, or send the full context. Splitting the work can miss connections across sections; sending everything can be expensive and distracting. The task decides which tradeoff is acceptable.
 
-Both are just "finish the string." But the first is a fact the model has seen a thousand times, and the second is 500 rounds of exact hashing. There is no "oh, this is SHA1, let me allocate more compute" switch. One forward pass has a fixed number of steps. If the answer needs one more step than the model can do in a single pass, it doesn't get close — it gets it wrong, confidently.
+## Training data
 
-This is why chain-of-thought, scratchpads, tool calls, sampling several attempts, and subagents work at all. They don't make the model smarter per token. They let it spend more tokens, and each token it writes becomes input for the next step. Writing out its reasoning literally buys the model more sequential steps to compute with. You pay for it in latency, context, and tokens — but you're buying real computation.
+Parameters, data, and training compute have to be considered together. The [Chinchilla paper](https://arxiv.org/abs/2203.15556) showed that, under its training budget, a smaller model trained on more tokens outperformed larger models that had seen less data.
 
-## Attention gets expensive fast
+That still leaves the question of which data to use. Duplicated pages, good code, books, and incorrect answers teach different patterns. If I'm calling a model a pattern matcher, that makes the examples it learned from more relevant to me.
 
-Transformers work by letting every token look at every other token. That "looking at" is attention.
+There's an adversarial version of this problem too. [Poisoning Web-Scale Training Datasets is Practical](https://arxiv.org/abs/2302.10149) examines how attackers can alter content collected for training. [Sleeper Agents](https://arxiv.org/abs/2401.05566) studies deliberately trained backdoor behavior that can survive subsequent safety training. These are different setups, but both make me wary of treating a dataset's size as sufficient information about it.
 
-The catch is in the bookkeeping. If everyone in a room has to shake hands with everyone else, doubling the number of people roughly quadruples the handshakes. Same with tokens: a prompt twice as long means about four times as many token-to-token comparisons during prefill. That's the "quadratic" cost people complain about. Long context is genuinely useful, and genuinely expensive.
+## Serving the model
 
-[FlashAttention](https://arxiv.org/abs/2205.14135) is worth knowing about here. It computes the exact same attention, but reorganizes how the numbers move through GPU memory. It's a reminder that the math is only half the cost — shuffling data around is the other half, and often the bigger half.
+Running a trained model has two main phases:
 
-## Long documents need routing
+- **Prefill:** process the prompt.
+- **Decode:** generate new tokens, each depending on the ones before it.
 
-A tempting mistake:
+Prefill can process prompt positions in parallel. Decode has to proceed sequentially, which gives the two phases different performance characteristics.
 
-> the model has a 1M token context window, so I'll just dump everything into the prompt.
+The KV cache stores keys and values computed for earlier tokens so the model can reuse them during generation. A longer conversation needs a larger cache. Moving that data can become a bottleneck even when there's enough compute available.
 
-Sometimes that's fine. Often it's wasteful, and sometimes it actively makes the answer worse.
-
-Think about the ratio of useful text to total text. If a model does well on a 10-page document, a 100-page document isn't going to do as well on the same thin sliver of attention. Stuffing the whole thing in does two bad things at once: prefill cost balloons, and the handful of sentences you actually care about are now drowning in ten times more noise. This is the ["lost in the middle"](https://arxiv.org/abs/2307.03172) problem — a model can have a huge context window and still be bad at using something buried in the middle of it.
-
-So the good systems break the problem up instead:
-
-- retrieval over chunks
-- map/reduce over sections
-- routing easy questions to a quick retrieval pass and hard ones to full long context
-- subagents that each read a different file or section and report back
-
-It all falls out of the compute shape. One giant, noisy attention problem is worse than several small, focused ones, so you split it and recombine the results.
-
-## Data quality
-
-The classic scaling-law story is "more parameters, more data, more compute." True, but incomplete, because it treats all data as interchangeable. It isn't.
-
-A trillion tokens of duplicated SEO garbage is not a trillion tokens of good books, code, papers, and real conversations. The model learns whatever patterns it's shown most often — so repeated junk teaches junk, and clean examples teach clean behavior. Data quality quietly decides what facts the model has probably seen, what writing style it imitates, and which mistakes it learned to treat as normal. "Just crawl more internet" hits diminishing returns fast.
-
-The [Chinchilla paper](https://arxiv.org/abs/2203.15556) made one part of this concrete: for a fixed training budget, a smaller model trained on *more* data beats a bigger model that was starved of it. But it still leaves the harder question wide open — more data, sure, but *which* data?
-
-And here's the thing people get backwards: if you believe LLMs are "just pattern matchers," that should make you care *more* about the data, not less. The patterns are the whole product.
-
-## Data poisoning
-
-Data quality has an adversarial cousin. If ordinary bad data shapes the model by accident, someone can shape it on purpose.
-
-The uncomfortable part is how little control that takes. [Poisoning Web-Scale Training Datasets is Practical](https://arxiv.org/abs/2302.10149) shows that the web these crawls draw from isn't fixed — pages change, crowdsourced entries change, crawlers snapshot at different moments — and an attacker can plant content knowing it'll get scraped. [Sleeper Agents](https://arxiv.org/abs/2401.05566) demonstrates models that act normal until a specific trigger shows up, then flip behavior. And more recent work suggests you may not need to poison a large *fraction* of the data to slip in a backdoor — a small, fixed number of poisoned examples can be enough.
-
-This doesn't mean every model is compromised. It means the origin of the training data is a real property of the model, not a footnote. Where the data came from matters as much as how much of it there was.
-
-## Serving a model is its own hard problem
-
-Training gets the headlines, but actually running a model for users — inference — is a separate engineering problem with its own bottlenecks, and it's the part that decides whether a model is fast and cheap enough to be worth using.
-
-When you send a prompt, serving happens in two phases:
-
-- **prefill**: read and digest your prompt
-- **decode**: generate the answer one token at a time
-
-Prefill can chew through your whole prompt in parallel. Decode can't — token 50 depends on token 49, so it's stuck going one at a time. That's why the first token can feel slow and then the rest streams out steadily.
-
-The main trick that keeps decode fast is the **KV cache**: instead of re-reading the whole conversation for every new token, the model stores what it already computed about earlier tokens and reuses it. The cost is memory — the cache grows with the conversation, and past a certain length the bottleneck stops being math and becomes memory bandwidth, i.e. just *moving that cached data around*.
-
-This is why serving people care about time-to-first-token, tokens-per-second, batch size, KV cache size, quantization, speculative decoding, and paged attention. [vLLM's PagedAttention](https://arxiv.org/abs/2309.06180) is a clean example: it manages the KV cache like a computer manages virtual memory pages. It doesn't make the model any smarter — it lets the same GPUs serve more requests with less waste. Same model, more throughput.
+[vLLM's PagedAttention](https://arxiv.org/abs/2309.06180) manages that cache in blocks, reducing wasted memory and making it easier to share storage. It's one example of why serving software matters: the same model can be much more practical to run with better memory management.
 
 ## Pattern recognition
 
-"It's just pattern matching" gets said like it's a dismissal. It shouldn't be, because a lot of skilled human work is pattern matching with good taste on top:
+A lot of work I use LLMs for involves recognizing something familiar in text: a code smell, a likely cause of an error, a clause in a contract, or an awkward paragraph. A model trained on enough examples can be useful at those tasks without doing them the way I do.
 
-- noticing a code smell
-- recognizing what kind of contract clause you're looking at
-- seeing that an error smells like missing auth
-- matching a new bug to an old incident
-- sensing that a paragraph reads off before you can say why
-
-An LLM isn't doing these the way a person does. But once you accept that it's an enormous pattern machine trained on text, it's not surprising that it's useful anywhere the input and output are mostly text-shaped patterns. That's a big chunk of knowledge work.
-
-The limitations come from the exact same place. If a task needs exact arithmetic, a fact that simply isn't in the context, or more computation than one forward pass can do, the model will still produce fluent, confident text — it just won't be right. Pattern matching is why these things work at all; fixed compute per token is why they fail the way they do.
-
-## Putting it together
-
-That's most of my working mental model:
-
-- **Patterns** explain why LLMs are capable in the first place.
-- **Fixed compute per token** explains most of how they fail, and why chain-of-thought and tools help.
-- **Data quality** is where a model's personality and blind spots come from, and **data provenance** is why poisoning is worth taking seriously.
-- Once you see the compute shape, it's obvious why serious long-context work is a *system* — routing, chunking, subagents — and not one giant prompt.
+The trouble is that a plausible continuation isn't always a correct answer. Exact arithmetic needs checking. Missing facts need a source. A complicated change needs tests. I get better results when the system can do those checks and use what it finds on the next step.
 
 ## Sources
 

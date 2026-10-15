@@ -9,13 +9,22 @@ struct BlogPost {
     date: String,
 }
 
+#[derive(Default)]
+enum MobilePage {
+    #[default]
+    About,
+    Notes,
+    Post,
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 #[derive(Default)]
 pub struct TemplateApp {
     blog_posts: Vec<BlogPost>,
     current_post_index: Option<usize>,
-    show_notes_mobile: bool,
+    #[serde(skip)]
+    mobile_page: MobilePage,
     #[serde(skip)]
     life: Life,
 }
@@ -37,43 +46,15 @@ macro_rules! include_blog_posts {
 
 impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // Bundle JetBrains Mono Medium as the monospace face — heavier stroke than egui's default Hack
-        let mut fonts = egui::FontDefinitions::default();
-        fonts.font_data.insert(
-            "jetbrains_mono".to_owned(),
-            egui::FontData::from_static(include_bytes!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/assets/fonts/JetBrainsMono-Medium.ttf"
-            ))),
-        );
-        fonts
-            .families
-            .entry(Monospace)
-            .or_default()
-            .insert(0, "jetbrains_mono".to_owned());
-        cc.egui_ctx.set_fonts(fonts);
+        configure_style(&cc.egui_ctx);
 
-        // Set up fonts and styles
-        cc.egui_ctx.set_visuals(egui::Visuals::light());
-        let mut style = (*cc.egui_ctx.style()).clone();
-        style.text_styles = [
-            (TextStyle::Heading, FontId::new(19.0, Monospace)),
-            (TextStyle::Body, FontId::new(17.0, Monospace)),
-            (TextStyle::Monospace, FontId::new(14.0, Monospace)),
-            (TextStyle::Button, FontId::new(14.0, Monospace)),
-            (TextStyle::Small, FontId::new(13.0, Monospace)),
-        ]
-        .into();
-        cc.egui_ctx.set_style(style);
-
-        // Load blog posts
         let blog_posts = Self::load_blog_posts();
-        let len_blog_posts = blog_posts.len();
+        let current_post_index = if blog_posts.is_empty() { None } else { Some(0) };
 
         Self {
             blog_posts,
-            current_post_index: if len_blog_posts > 0 { Some(0) } else { None },
-            show_notes_mobile: false,
+            current_post_index,
+            mobile_page: MobilePage::About,
             life: Life::default(),
         }
     }
@@ -105,17 +86,40 @@ impl TemplateApp {
     }
 }
 
+fn configure_style(ctx: &egui::Context) {
+    // Bundle JetBrains Mono Medium as the monospace face — heavier stroke than egui's default Hack
+    let mut fonts = egui::FontDefinitions::default();
+    fonts.font_data.insert(
+        "jetbrains_mono".to_owned(),
+        egui::FontData::from_static(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/fonts/JetBrainsMono-Medium.ttf"
+        ))),
+    );
+    fonts
+        .families
+        .entry(Monospace)
+        .or_default()
+        .insert(0, "jetbrains_mono".to_owned());
+    ctx.set_fonts(fonts);
+
+    // Set up fonts and styles
+    ctx.set_visuals(egui::Visuals::light());
+    let mut style = (*ctx.style()).clone();
+    style.text_styles = [
+        (TextStyle::Heading, FontId::new(19.0, Monospace)),
+        (TextStyle::Body, FontId::new(17.0, Monospace)),
+        (TextStyle::Monospace, FontId::new(14.0, Monospace)),
+        (TextStyle::Button, FontId::new(14.0, Monospace)),
+        (TextStyle::Small, FontId::new(13.0, Monospace)),
+    ]
+    .into();
+    ctx.set_style(style);
+}
+
 fn is_mobile_or_small_screen(ctx: &egui::Context) -> bool {
-    let available_rect = ctx.available_rect();
-    let width = available_rect.width();
-    let height = available_rect.height();
-
-    // Define thresholds for what you consider "mobile" or "small screen"
-    const MOBILE_WIDTH_THRESHOLD: f32 = 600.0;
-    const MOBILE_HEIGHT_THRESHOLD: f32 = 800.0;
-
-    // Check if either dimension is below the threshold
-    width < MOBILE_WIDTH_THRESHOLD || height < MOBILE_HEIGHT_THRESHOLD
+    // The desktop notes window needs room for both the list and the article.
+    ctx.screen_rect().width() < 1100.0
 }
 
 // Shared content functions
@@ -154,43 +158,43 @@ fn render_links(ui: &mut egui::Ui) {
 }
 
 fn add_link(ui: &mut egui::Ui, label: &str, text: &str, url: &str) {
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.label(format!("{}: ", label));
         ui.hyperlink_to(text, url);
     });
 }
 
-fn show_blog_list(app: &mut TemplateApp, ui: &mut egui::Ui) {
+fn show_blog_list(app: &mut TemplateApp, ui: &mut egui::Ui) -> bool {
+    let mut selected = false;
     for (index, post) in app.blog_posts.iter().enumerate() {
-        if ui.button(&post.title).clicked() {
+        if ui.add(egui::Button::new(&post.title).wrap()).clicked() {
             app.current_post_index = Some(index);
+            selected = true;
         }
-        if &post.date.len() > &0 {
+        if !post.date.is_empty() {
             ui.label(RichText::new(&post.date).small().weak());
         }
         ui.add_space(4.0);
     }
+    selected
 }
 
 fn show_blog_content(app: &mut TemplateApp, ui: &mut egui::Ui) {
     if let Some(index) = app.current_post_index {
         let post = &app.blog_posts[index];
-        ui.horizontal(|ui| {
-            ui.add_space(10.0); // Adds 10 pixels of horizontal space
-            ui.vertical(|ui| {
-                ui.heading(&post.title);
-                if &post.date.len() > &0 {
-                    ui.label(RichText::new(&post.date).italics());
-                }
-            });
-        });
-        ui.add_space(2.0);
-
-        // ponytail: cap line length (~760px) for readability; full-width monospace is too wide to read
-        ui.set_max_width(760.0);
+        // set_max_width can expand the UI, so never exceed the viewport's remaining width.
+        ui.set_max_width(ui.available_width().min(760.0));
+        ui.heading(&post.title);
+        if !post.date.is_empty() {
+            ui.label(RichText::new(&post.date).small().weak());
+        }
+        ui.add_space(8.0);
         ui.spacing_mut().item_spacing.y = 8.0; // a little more air between paragraphs
         let mut cache = CommonMarkCache::default();
-        CommonMarkViewer::new("viewer").show(ui, &mut cache, &post.content);
+        // Keep the Markdown title for readers of the source without displaying it twice.
+        let title = format!("# {}\n\n", post.title);
+        let content = post.content.strip_prefix(&title).unwrap_or(&post.content);
+        CommonMarkViewer::new(("viewer", index)).show(ui, &mut cache, content);
     } else {
         ui.centered_and_justified(|ui| {
             ui.label("Select a post to view");
@@ -268,7 +272,7 @@ impl Life {
         }
         self.cells = next;
 
-        // Re-seed when the board dies out or stagnates (still lifes / oscillators).
+        // Re-seed when the board dies out or stagnates (static patterns / oscillators).
         let pop = self.cells.iter().filter(|&&b| b).count();
         if pop == self.prev_pop {
             self.stale += 1;
@@ -285,7 +289,12 @@ impl Life {
 const LIFE_CELL: f32 = 26.0;
 const LIFE_STEP_SECS: f64 = 0.6;
 
-fn paint_background(life: &mut Life, ctx: &egui::Context, painter: &egui::Painter, rect: egui::Rect) {
+fn paint_background(
+    life: &mut Life,
+    ctx: &egui::Context,
+    painter: &egui::Painter,
+    rect: egui::Rect,
+) {
     let cols = (rect.width() / LIFE_CELL).ceil() as usize + 1;
     let rows = (rect.height() / LIFE_CELL).ceil() as usize + 1;
     let now = ctx.input(|i| i.time);
@@ -417,49 +426,55 @@ fn desktop_layout(app: &mut TemplateApp, ctx: &egui::Context) {
 // Mobile layout
 fn mobile_layout(app: &mut TemplateApp, ctx: &egui::Context) {
     egui::TopBottomPanel::top("mobile_panel").show(ctx, |ui| {
+        ui.spacing_mut().interact_size.y = 44.0;
         ui.horizontal(|ui| {
             ui.heading("Kevin Guo");
-            ui.add_space(ui.available_width() - 50.0);
-            let button_text = if app.show_notes_mobile {
-                "Close"
-            } else {
-                "Notes"
-            };
-            if ui.button(button_text).clicked() {
-                app.show_notes_mobile = !app.show_notes_mobile;
-            }
-        });
-    });
-
-    if app.show_notes_mobile {
-        show_notes_panel(app, ctx);
-    } else {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.add_space(10.0);
-                render_intro(ui);
-                ui.add_space(20.0);
-                render_links(ui);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let button_text = match app.mobile_page {
+                    MobilePage::About => "Notes",
+                    MobilePage::Notes => "About",
+                    MobilePage::Post => "All notes",
+                };
+                if ui.button(button_text).clicked() {
+                    app.mobile_page = match app.mobile_page {
+                        MobilePage::About | MobilePage::Post => MobilePage::Notes,
+                        MobilePage::Notes => MobilePage::About,
+                    };
+                }
             });
         });
-    }
-}
-
-fn show_notes_panel(app: &mut TemplateApp, ctx: &egui::Context) {
-    egui::CentralPanel::default().show(ctx, |ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.heading("Notes");
-            ui.add_space(10.0);
-
-            if app.blog_posts.is_empty() {
-                ui.label("Nothing here yet!");
-            } else {
-                show_blog_list(app, ui);
-                ui.add_space(20.0);
-                show_blog_content(app, ui);
-            }
-        });
     });
+
+    egui::CentralPanel::default()
+        .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(16.0))
+        .show(ctx, |ui| {
+            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
+            ui.spacing_mut().interact_size.y = 44.0;
+            ui.spacing_mut().item_spacing.y = 12.0;
+            let scroll_id = match app.mobile_page {
+                MobilePage::About => egui::Id::new("mobile_about"),
+                MobilePage::Notes => egui::Id::new("mobile_notes"),
+                MobilePage::Post => egui::Id::new(("mobile_post", app.current_post_index)),
+            };
+            egui::ScrollArea::vertical()
+                .id_source(scroll_id)
+                .auto_shrink([false, false])
+                .show(ui, |ui| match app.mobile_page {
+                    MobilePage::About => {
+                        render_intro(ui);
+                        ui.add_space(16.0);
+                        render_links(ui);
+                    }
+                    MobilePage::Notes => {
+                        ui.heading("Notes");
+                        ui.add_space(8.0);
+                        if show_blog_list(app, ui) {
+                            app.mobile_page = MobilePage::Post;
+                        }
+                    }
+                    MobilePage::Post => show_blog_content(app, ui),
+                });
+        });
 }
 
 // Re-applied every frame so it survives the Light/Dark toggle (which resets visuals).
@@ -479,7 +494,11 @@ fn apply_theme(ctx: &egui::Context) {
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         apply_theme(ctx);
+        let mobile = is_mobile_or_small_screen(ctx);
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            if mobile {
+                ui.spacing_mut().interact_size.y = 44.0;
+            }
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 // NOTE: no File->Quit on web pages!
@@ -497,7 +516,7 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        if !is_mobile_or_small_screen(ctx) {
+        if !mobile {
             desktop_layout(self, ctx);
         } else {
             mobile_layout(self, ctx);
@@ -520,10 +539,166 @@ fn make_window_vertical(title: &str, show_title: bool) -> egui::Window<'_> {
         .resizable(true)
         .title_bar(show_title)
         .default_size([1000.0, 800.0]) // Taller default size
-        .min_width(1000.0) // Minimum width to prevent too narrow windows
-        .min_height(800.0) // Minimum height to ensure usability
+        .min_width(640.0)
+        .min_height(400.0)
 }
 
 fn make_frame_with_padding(padding: f32) -> egui::Frame {
     egui::Frame::none().inner_margin(egui::Margin::same(padding))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mobile_frame(
+        ctx: &egui::Context,
+        app: &mut TemplateApp,
+        size: egui::Vec2,
+        events: Vec<egui::Event>,
+    ) -> egui::FullOutput {
+        ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size)),
+                events,
+                ..Default::default()
+            },
+            |ctx| mobile_layout(app, ctx),
+        )
+    }
+
+    fn assert_text_fits(shape: &egui::Shape, width: f32, text_count: &mut usize) {
+        match shape {
+            egui::Shape::Text(text) if !text.galley.text().trim().is_empty() => {
+                *text_count += 1;
+                let bounds = text.visual_bounding_rect();
+                assert!(
+                    bounds.left() >= -1.0 && bounds.right() <= width + 1.0,
+                    "text extends past a {width}px viewport: {:?} at {bounds:?}",
+                    text.galley.text()
+                );
+            }
+            egui::Shape::Vec(shapes) => {
+                for shape in shapes {
+                    assert_text_fits(shape, width, text_count);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn every_post_fits_phone_and_tablet_widths() {
+        for width in [320.0, 375.0, 390.0, 430.0, 768.0, 1024.0] {
+            let ctx = egui::Context::default();
+            configure_style(&ctx);
+            let mut app = TemplateApp {
+                blog_posts: TemplateApp::load_blog_posts(),
+                mobile_page: MobilePage::Post,
+                ..Default::default()
+            };
+            for index in 0..app.blog_posts.len() {
+                app.current_post_index = Some(index);
+                // Render the entire article, including links near the end, without vertical culling.
+                let output = mobile_frame(&ctx, &mut app, egui::vec2(width, 30000.0), vec![]);
+                let mut text_count = 0;
+                for shape in output.shapes {
+                    assert_text_fits(&shape.shape, width, &mut text_count);
+                }
+                assert!(text_count > 0);
+            }
+        }
+    }
+
+    fn click_text(ctx: &egui::Context, app: &mut TemplateApp, text: &str) {
+        let size = egui::vec2(375.0, 812.0);
+        let output = mobile_frame(ctx, app, size, vec![]);
+        let pos = output
+            .shapes
+            .iter()
+            .find_map(|shape| match &shape.shape {
+                egui::Shape::Text(shape) if shape.galley.text() == text => {
+                    Some(shape.visual_bounding_rect().center())
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("missing visible control: {text}"));
+        for pressed in [true, false] {
+            mobile_frame(
+                ctx,
+                app,
+                size,
+                vec![
+                    egui::Event::PointerMoved(pos),
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed,
+                        modifiers: egui::Modifiers::default(),
+                    },
+                ],
+            );
+        }
+    }
+
+    #[test]
+    fn mobile_navigation_opens_a_post_and_returns_to_the_list() {
+        let ctx = egui::Context::default();
+        configure_style(&ctx);
+        let mut app = TemplateApp {
+            blog_posts: TemplateApp::load_blog_posts(),
+            ..Default::default()
+        };
+        click_text(&ctx, &mut app, "Notes");
+        assert!(matches!(app.mobile_page, MobilePage::Notes));
+        click_text(&ctx, &mut app, "A layman's view of LLMs");
+        assert!(matches!(app.mobile_page, MobilePage::Post));
+        assert_eq!(app.current_post_index, Some(1));
+        click_text(&ctx, &mut app, "All notes");
+        assert!(matches!(app.mobile_page, MobilePage::Notes));
+        click_text(&ctx, &mut app, "About");
+        assert!(matches!(app.mobile_page, MobilePage::About));
+    }
+
+    #[test]
+    fn mobile_article_scrolls_vertically() {
+        let ctx = egui::Context::default();
+        configure_style(&ctx);
+        let mut app = TemplateApp {
+            blog_posts: TemplateApp::load_blog_posts(),
+            current_post_index: Some(0),
+            mobile_page: MobilePage::Post,
+            ..Default::default()
+        };
+        let size = egui::vec2(375.0, 812.0);
+        mobile_frame(&ctx, &mut app, size, vec![]);
+        mobile_frame(
+            &ctx,
+            &mut app,
+            size,
+            vec![
+                egui::Event::PointerMoved(egui::pos2(150.0, 400.0)),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -600.0),
+                    modifiers: egui::Modifiers::default(),
+                },
+            ],
+        );
+        let output = mobile_frame(&ctx, &mut app, size, vec![]);
+        let visible_text: Vec<_> = output
+            .shapes
+            .iter()
+            .filter_map(|shape| match &shape.shape {
+                egui::Shape::Text(text)
+                    if shape.clip_rect.intersects(text.visual_bounding_rect()) =>
+                {
+                    Some(text.galley.text())
+                }
+                _ => None,
+            })
+            .collect();
+        assert!(!visible_text.contains(&"Notes after Ramp"));
+        assert!(visible_text.contains(&"All notes"));
+    }
 }
