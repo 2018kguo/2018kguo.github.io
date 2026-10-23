@@ -148,6 +148,7 @@ fn render_links(ui: &mut egui::Ui) {
         "@2018kguo",
         "https://www.github.com/2018kguo/",
     );
+    add_link(ui, "X", "@2018kguo", "https://x.com/2018kguo");
     add_link(ui, "Medium", "@2018kguo", "https://2018kguo.medium.com/");
     add_link(
         ui,
