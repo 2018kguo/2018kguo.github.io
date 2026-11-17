@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import MarkdownIt from 'markdown-it';
 
 await rm(new URL('../dist/', import.meta.url), { recursive: true, force: true });
 const md = new MarkdownIt();
+const gardenScriptVersion = createHash('sha256').update(await readFile('site/garden.js')).digest('hex').slice(0, 12);
 const posts = [
   ['ramp_career', 'Notes after Ramp', '2026'],
   ['llm_math', "A layman's view of LLMs", '2026'],
@@ -110,9 +112,10 @@ await write('garden/index.html', page('Garden', `<main class="garden-layout">
 <p>Things I’m reading and links I keep coming back to.</p>
 <details id="owner" class="owner">
 <summary>Owner tools</summary>
-<form id="login" hidden>
+<form id="login" method="post">
 <label>Password <input type="password" name="password" autocomplete="current-password" maxlength="128" required></label>
-<button>Sign in</button>
+<button disabled>Sign in</button>
+<noscript>Enable JavaScript to sign in.</noscript>
 </form>
 <form id="add" hidden>
 <label>URL <input type="url" name="url" maxlength="2048" placeholder="https://" required></label>
@@ -138,7 +141,7 @@ ${['Reading List', 'Misc Links', 'Bookmarks'].map((name) => `<button type="butto
 <p id="empty" hidden>No matching bookmarks.</p>
 </section>
 <canvas id="garden-pixels" width="152" height="104" aria-hidden="true"></canvas>
-<script src="/garden.js" defer></script>
+<script src="/garden.js?v=${gardenScriptVersion}" defer></script>
 </main>`, 'Garden'));
 
 for (const file of ['CNAME', 'jumpseat', 'site/site.css', 'site/site.js', 'site/garden.js',

@@ -42,6 +42,7 @@ function row(item) {
 async function api(action, data) {
   const response = await fetch(apiOrigin + '/garden/api/' + action, {
     credentials: 'include',
+    signal: AbortSignal.timeout(4500),
     ...(data === undefined ? {} : {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -105,23 +106,35 @@ const loadBookmarks = api('bookmarks').then((items) => {
   filter();
 }).catch(() => { /* The imported lists are also in the static page. */ });
 
+const signInButton = login.querySelector('button');
+const connectionMessage = 'Can’t reach the Garden API. Try again or switch networks.';
 owner.addEventListener('toggle', async () => {
-  if (!owner.open) return;
+  if (!owner.open || signInButton.dataset.checking) return;
+  signInButton.dataset.checking = 'true';
+  signInButton.disabled = true;
   status.textContent = 'Checking sign-in…';
   try {
     const session = await api('session');
     signedIn(session.signedIn);
     status.textContent = '';
   } catch {
-    login.hidden = add.hidden = logout.hidden = true;
-    status.textContent = 'Couldn’t reach the Garden API. Check your connection, then close and reopen Owner tools to retry.';
+    signedIn(false);
+    status.textContent = connectionMessage;
+  } finally {
+    signInButton.disabled = false;
+    delete signInButton.dataset.checking;
   }
 });
 
-login.addEventListener('submit', handle(login.querySelector('button'), async () => {
+login.addEventListener('submit', handle(signInButton, async () => {
   const data = Object.fromEntries(new FormData(login));
+  try {
+    await api('login', data);
+  } catch (error) {
+    if (error instanceof TypeError || error.name === 'TimeoutError') throw new Error(connectionMessage);
+    throw error;
+  }
   login.reset();
-  await api('login', data);
   signedIn(true);
   add.elements.url.focus();
 }));
