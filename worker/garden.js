@@ -76,58 +76,80 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith(prefix)) return json({ error: 'Not found.' }, 404);
-    const action = url.pathname.slice(prefix.length);
-    const store = env.GARDEN.getByName('personal-garden');
-    if (request.method === 'GET' && action === 'bookmarks') return json(await store.list());
-
-    const password = env.GARDEN_PASSWORD;
-    if (typeof password !== 'string' || !/^[a-f0-9]{64}$/.test(password)) {
-      return json({ error: 'Owner sign-in is unavailable.' }, 503);
+    const origin = request.headers.get('Origin');
+    const local = ['localhost', '127.0.0.1'].includes(url.hostname);
+    const allowed = origin === (local ? url.origin : 'https://kguo.dev');
+    if (request.method === 'OPTIONS') {
+      if (!allowed) return json({ error: 'Request must come from the garden.' }, 403);
+      return new Response(null, { status: 204, headers: {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, POST',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Vary': 'Origin',
+      } });
     }
-    // A rotated password invalidates existing sessions.
-    const passwordKey = await sessionHash(password);
-    const token = sessionToken(request);
-    const hash = token && await sessionHash(token);
-    if (request.method === 'GET' && action === 'session') {
-      return json({ signedIn: Boolean(hash && await store.hasSession(hash, passwordKey)) });
+    const response = await handleRequest(request, env, url.pathname.slice(prefix.length), allowed);
+    response.headers.set('Vary', 'Origin');
+    if (allowed) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
     }
-    if (request.method !== 'POST') return json({ error: 'Not found.' }, 404);
-    if (request.headers.get('Origin') !== url.origin) {
-      return json({ error: 'Request must come from the garden.' }, 403);
-    }
-
-    if (action === 'login') {
-      const ip = request.headers.get('CF-Connecting-IP') || 'local';
-      if (!(await env.LOGIN_LIMIT.limit({ key: ip })).success) {
-        return json({ error: 'Too many attempts. Try again in a minute.' }, 429);
-      }
-      const input = await readJson(request);
-      const submitted = input?.password;
-      if (typeof submitted !== 'string' || submitted.length !== 64 ||
-          !crypto.subtle.timingSafeEqual(await digest(submitted), await digest(password))) {
-        return json({ error: 'Incorrect password.' }, 401);
-      }
-      const nextToken = crypto.getRandomValues(new Uint8Array(32)).toHex();
-      await store.signIn(await sessionHash(nextToken), passwordKey, hash);
-      return json({ signedIn: true }, 200, { 'Set-Cookie': cookie(nextToken, sessionSeconds) });
-    }
-
-    if (action === 'logout') {
-      if (hash) await store.signOut(hash);
-      return json({ signedIn: false }, 200, { 'Set-Cookie': cookie('', 0) });
-    }
-    if (action !== 'bookmarks') return json({ error: 'Not found.' }, 404);
-    if (!hash || !await store.hasSession(hash, passwordKey)) {
-      return json({ error: 'Sign in to save bookmarks.' }, 401);
-    }
-    const item = bookmark(await readJson(request));
-    if (!item) return json({ error: 'Enter a title, a valid HTTP or HTTPS URL, and a list.' }, 400);
-    const result = await store.add(hash, passwordKey, item);
-    if (result === 'expired') return json({ error: 'Sign in to save bookmarks.' }, 401);
-    if (result === 'duplicate') return json({ error: 'This URL is already in the garden.' }, 409);
-    return json(item, 201);
+    return response;
   },
 };
+
+async function handleRequest(request, env, action, allowed) {
+  const store = env.GARDEN.getByName('personal-garden');
+  if (request.method === 'GET' && action === 'bookmarks') return json(await store.list());
+
+  const password = env.GARDEN_PASSWORD;
+  if (typeof password !== 'string' || !/^[a-f0-9]{64}$/.test(password)) {
+    return json({ error: 'Owner sign-in is unavailable.' }, 503);
+  }
+  // A rotated password invalidates existing sessions.
+  const passwordKey = await sessionHash(password);
+  const token = sessionToken(request);
+  const hash = token && await sessionHash(token);
+  if (request.method === 'GET' && action === 'session') {
+    return json({ signedIn: Boolean(hash && await store.hasSession(hash, passwordKey)) });
+  }
+  if (request.method !== 'POST') return json({ error: 'Not found.' }, 404);
+  if (!allowed) {
+    return json({ error: 'Request must come from the garden.' }, 403);
+  }
+
+  if (action === 'login') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'local';
+    if (!(await env.LOGIN_LIMIT.limit({ key: ip })).success) {
+      return json({ error: 'Too many attempts. Try again in a minute.' }, 429);
+    }
+    const input = await readJson(request);
+    const submitted = input?.password;
+    if (typeof submitted !== 'string' || submitted.length !== 64 ||
+        !crypto.subtle.timingSafeEqual(await digest(submitted), await digest(password))) {
+      return json({ error: 'Incorrect password.' }, 401);
+    }
+    const nextToken = crypto.getRandomValues(new Uint8Array(32)).toHex();
+    await store.signIn(await sessionHash(nextToken), passwordKey, hash);
+    return json({ signedIn: true }, 200, { 'Set-Cookie': cookie(nextToken, sessionSeconds) });
+  }
+
+  if (action === 'logout') {
+    if (hash) await store.signOut(hash);
+    return json({ signedIn: false }, 200, { 'Set-Cookie': cookie('', 0) });
+  }
+  if (action !== 'bookmarks') return json({ error: 'Not found.' }, 404);
+  if (!hash || !await store.hasSession(hash, passwordKey)) {
+    return json({ error: 'Sign in to save bookmarks.' }, 401);
+  }
+  const item = bookmark(await readJson(request));
+  if (!item) return json({ error: 'Enter a title, a valid HTTP or HTTPS URL, and a list.' }, 400);
+  const result = await store.add(hash, passwordKey, item);
+  if (result === 'expired') return json({ error: 'Sign in to save bookmarks.' }, 401);
+  if (result === 'duplicate') return json({ error: 'This URL is already in the garden.' }, 409);
+  return json(item, 201);
+}
 
 export class Garden extends DurableObject {
   constructor(ctx, env) {

@@ -3,7 +3,7 @@ main = "worker/garden.js"
 compatibility_date = "2025-10-01"
 workers_dev = false
 preview_urls = false
-routes = [{ pattern = "kguo.dev/garden/api/*", zone_name = "kguo.dev" }]
+routes = [{ pattern = "garden-api.kguo.dev", custom_domain = true }]
 
 [[durable_objects.bindings]]
 name = "GARDEN"
@@ -15,5 +15,5 @@ new_sqlite_classes = ["Garden"]
 
 [[ratelimits]]
 name = "LOGIN_LIMIT"
-namespace_id = "1001"
+namespace_id = "734106281"
 simple = { limit = 8, period = 60 }

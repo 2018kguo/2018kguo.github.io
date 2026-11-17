@@ -1,3 +1,4 @@
+const apiOrigin = ['localhost', '127.0.0.1'].includes(location.hostname) ? '' : 'https://garden-api.kguo.dev';
 const list = document.querySelector('#bookmarks');
 const search = document.querySelector('#search');
 const collection = document.querySelector('#collection');
@@ -36,10 +37,13 @@ function row(item) {
 }
 
 async function api(action, data) {
-  const response = await fetch('/garden/api/' + action, data === undefined ? {} : {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const response = await fetch(apiOrigin + '/garden/api/' + action, {
+    credentials: 'include',
+    ...(data === undefined ? {} : {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
   });
   if (!response.headers.get('Content-Type')?.includes('application/json')) {
     throw new Error('The garden service is unavailable.');

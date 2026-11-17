@@ -19,10 +19,9 @@ is for local testing. The API stores local test data in `.wrangler/`.
 
 ## Publish bookmark editing
 
-The `kguo.dev/garden/api/*` Worker route requires the Cloudflare DNS
-records for `kguo.dev` to be proxied. Use Full (strict) TLS with the
-GitHub Pages origin and keep the Pages custom domain and origin records.
-The Worker handles the API path and GitHub Pages serves the site.
+The Worker uses `garden-api.kguo.dev` as a Cloudflare Custom Domain.
+Deploy it in the Cloudflare account that owns the zone, on Workers Free.
+GitHub Pages continues to serve the site on `kguo.dev`.
 
 1. Authenticate with `npx wrangler login` and deploy with
    `npm run deploy:worker`.

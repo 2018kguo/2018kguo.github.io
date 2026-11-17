@@ -41,7 +41,7 @@ function page(title, body, area) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title === 'Kevin Guo' ? title : `${title} · Kevin Guo`)}</title>
 <meta name="referrer" content="strict-origin-when-cross-origin">
-${area === 'Garden' ? `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">` : ''}
+${area === 'Garden' ? `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://garden-api.kguo.dev; object-src 'none'; base-uri 'none'; form-action 'none'">` : ''}
 <link rel="apple-touch-icon" href="/icon_ios_touch_192.png">
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/site.css">
@@ -49,7 +49,7 @@ ${area === 'Garden' ? `<meta http-equiv="Content-Security-Policy" content="defau
 </head>
 <body>
 <header class="masthead">
-  <a class="name" href="/">Kevin Guo</a>
+  ${area === 'About' ? '<h1 class="name"><a href="/">Kevin Guo</a></h1>' : '<a class="name" href="/">Kevin Guo</a>'}
   <nav aria-label="Site">${nav.map(([href, label]) => `<a href="${href}"${label === area ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
   <button id="theme" type="button" hidden>Theme</button>
 </header>
@@ -66,22 +66,22 @@ function notesList(active) {
 
 function notesPage(title, content, active) {
   return page(title, `<main class="notes-layout">
-<aside class="panel notes-nav"><h2>Notes</h2>${notesList(active)}</aside>
-<section class="panel reading-pane">${content}</section>
+<aside class="notes-nav"><h2>Notes</h2>${notesList(active)}</aside>
+<section class="reading-pane">${content}</section>
 </main>`, 'Notes');
 }
 
 await write('index.html', page('Kevin Guo', `<main class="home">
-<section class="panel about"><h1>About Me</h1>
+<section class="about" aria-label="About Kevin">
 <p>I'm a software engineer based in NYC. I was previously at Ramp and am now working on something new.</p>
 <p>I strive to build performant and composable software. I've recently been interested in event-driven systems, Rust, and programming languages.</p></section>
-<section class="panel links"><h2>Links</h2><ul>${contacts.map(([label, href]) =>
+<section class="links"><h2>Links</h2><ul>${contacts.map(([label, href]) =>
   `<li><a href="${href}">${label}</a></li>`).join('')}</ul></section>
-<section class="panel home-notes"><h2>Notes</h2>${notesList()}</section>
+<section class="home-notes"><h2>Notes</h2>${notesList()}</section>
 <canvas id="life" aria-hidden="true"></canvas>
 </main>`, 'About'));
 
-await write('notes/index.html', notesPage('Notes', `<h1>Notes</h1><p class="desktop-note">Select a post to view.</p><div class="mobile-note-list">${notesList()}</div>`));
+await write('notes/index.html', page('Notes', `<main><h1>Notes</h1>${notesList()}</main>`, 'Notes'));
 for (const [slug, title, year] of posts) {
   const source = await readPost(slug);
   const heading = `# ${title}\n\n`;
@@ -105,7 +105,7 @@ for (const [slug, collection] of lists) {
 }
 await write('garden/seed.json', JSON.stringify(bookmarks));
 await write('garden/index.html', page('Garden', `<main class="garden-layout">
-<section class="panel garden">
+<section class="garden">
 <h1>Garden</h1>
 <p>Things I’m reading and links I keep coming back to.</p>
 <div id="filters" hidden>
@@ -115,7 +115,7 @@ await write('garden/index.html', page('Garden', `<main class="garden-layout">
 <ul id="bookmarks">${bookmarks.map(({ title, url, collection }) => `<li>${url ? `<a href="${escape(url)}">${escape(title)}</a>` : escape(title)}<small>${escape(collection)}</small></li>`).join('')}</ul>
 <p id="empty" hidden>No matching bookmarks.</p>
 </section>
-<section id="owner" class="panel owner" hidden>
+<section id="owner" class="owner" hidden>
 <details>
 <summary>Owner tools</summary>
 <form id="login" hidden>
