@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postgres · Kevin Guo</title>
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<link rel="apple-touch-icon" href="/icon_ios_touch_192.png">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
+</head>
+<body>
+<header class="masthead">
+  <a class="name" href="/">Kevin Guo</a>
+  <nav aria-label="Site"><a href="/">About</a><a href="/notes/" aria-current="page">Notes</a><a href="/garden/">Garden</a></nav>
+  <button id="theme" type="button" hidden>Theme</button>
+</header>
+<main class="notes-layout">
+<aside class="notes-nav"><h2>Notes</h2><ul class="notes-list"><li><a href="/notes/ramp_career/">Notes after Ramp</a> <small>2026</small></li><li><a href="/notes/llm_math/">A layman's view of LLMs</a> <small>2026</small></li><li><a href="/notes/emulators/">Feature emulators</a> <small>2026</small></li><li><a href="/notes/postgres/" aria-current="page">Postgres</a> <small>2024</small></li><li><a href="/notes/interpreters/">Interpreters</a> <small>2024</small></li>
+  <li><a href="/garden/">Reading List &amp; Misc Links</a></li></ul></aside>
+<section class="reading-pane"><article>
+<a class="back" href="/notes/">← All notes</a>
+<h1>Postgres</h1><p class="year">2024</p><h2>Loose collection of notes from <a href="https://www.interdb.jp/pg/index.html">Postgres Internals</a></h2>
+<h3>Chapter 2</h3>
+<p>Individual processes use the work_mem memory area for performing join and sort operations, pages for tables and indexes are loaded into a shared buffer pool</p>
+<h3>Chapter 3</h3>
+<p>SQL statement lifecycle: parse -&gt; analyze to query tree -&gt; rewrite query tree -&gt; generate plan -&gt; execute plan</p>
+<p>parsenodes.h defines the tree structure for the query tree</p>
+<p>costsize.c defines functions that the planner uses for query optimization, i.e cost_seqscan()</p>
+<p>selectivity of query predicates is used as a factor during cost estimation and estimated w/ info from pg_stats. either calculated by referencing the most common values for a column or histogram_bounds for ints/floats</p>
+<p>SQL statement lifecycle: parse -&gt; analyze to query tree -&gt; rewrite query tree -&gt; generate plan -&gt; execute plan</p>
+<p>Something like <code>Sort Method: external sort  Disk: 10000kB</code> in the explain output means that a temporary file was created for joining/sorting. Temporary files are created in base/pg_tmp</p>
+<p>Hash join in Postgres uses a 2 phase in memory hash join if the size of the inner table is 1/4 or less of work_mem, otherwise the hybrid hash join is used w/ the skew method</p>
+<p>If # of tables in a query is smaller than around 12, dynamic programming can be applied to get the optimal plan. It uses a genetic algorithm for many tables</p>
+<p>In the dynamic programming approach, the cheapest join path of each combination of tables is calculated and reused at the next level. i.e with 3 tables you calculate cheapest join paths for {A, B}, {A, C}, {B, C} in level 2 so in level 3 you only need to calculate the join path of the unused table + the combination of 2 tables from the previous step and compare 3 results.</p>
+
+</article></section>
+</main>
+</body>
+</html>

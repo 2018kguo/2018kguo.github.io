@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A layman's view of LLMs · Kevin Guo</title>
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<link rel="apple-touch-icon" href="/icon_ios_touch_192.png">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
+</head>
+<body>
+<header class="masthead">
+  <a class="name" href="/">Kevin Guo</a>
+  <nav aria-label="Site"><a href="/">About</a><a href="/notes/" aria-current="page">Notes</a><a href="/garden/">Garden</a></nav>
+  <button id="theme" type="button" hidden>Theme</button>
+</header>
+<main class="notes-layout">
+<aside class="notes-nav"><h2>Notes</h2><ul class="notes-list"><li><a href="/notes/ramp_career/">Notes after Ramp</a> <small>2026</small></li><li><a href="/notes/llm_math/" aria-current="page">A layman's view of LLMs</a> <small>2026</small></li><li><a href="/notes/emulators/">Feature emulators</a> <small>2026</small></li><li><a href="/notes/postgres/">Postgres</a> <small>2024</small></li><li><a href="/notes/interpreters/">Interpreters</a> <small>2024</small></li>
+  <li><a href="/garden/">Reading List &amp; Misc Links</a></li></ul></aside>
+<section class="reading-pane"><article>
+<a class="back" href="/notes/">← All notes</a>
+<h1>A layman's view of LLMs</h1><p class="year">2026</p><p>The detail that helped me understand LLMs was how they spend compute. A model generates text a token at a time. Each step runs through the model's layers; a harder question doesn't give that step extra layers to work with.</p>
+<p>The total budget can vary a lot. A system can generate more reasoning tokens, try several answers, use tools, or hand work to another model. Those choices matter because a single pass has limited room to compute an answer.</p>
+<h2>Compute per token</h2>
+<p>Suppose I ask for a familiar fact, then ask for the result of applying a hash function 500 times. Both prompts ask the model to finish a string. The fact might be easy to recall from training. The hash requires a sequence of exact operations that the model can't reliably squeeze into one pass.</p>
+<p>Writing intermediate steps gives it more passes. Each generated token becomes input to the next, so a scratchpad lets a computation extend across tokens. That can help with a difficult problem, though it doesn't guarantee the steps are correct. For hashing, I'd want it to run code.</p>
+<p>This is how I think about reasoning budgets and tool use: ways to give the system more work to do before it commits to an answer. The cost shows up in latency and tokens.</p>
+<h2>Attention and long inputs</h2>
+<p>In dense self-attention, tokens compare information with other tokens in the sequence. The number of possible pairs grows quadratically: double the sequence length and there are roughly four times as many pairs. That applies to the attention work, not necessarily the cost of the whole model.</p>
+<p><a href="https://arxiv.org/abs/2205.14135">FlashAttention</a> computes exact attention while reducing transfers between levels of GPU memory. The arithmetic matters, but so does how the data moves through the hardware.</p>
+<p>Long context also has a quality problem. Fitting a document into the window doesn't establish that the model will use every part well. <a href="https://arxiv.org/abs/2307.03172">Lost in the Middle</a> found that the models it tested often did worse when relevant information sat in the middle of a long input. I wouldn't treat that result as a verdict on every newer model, but it's a useful reason to test retrieval rather than assume it works.</p>
+<p>For a large collection of documents, I usually want to compare a few approaches: retrieve relevant passages, process sections separately, or send the full context. Splitting the work can miss connections across sections; sending everything can be expensive and distracting. The task decides which tradeoff is acceptable.</p>
+<h2>Training data</h2>
+<p>Parameters, data, and training compute have to be considered together. The <a href="https://arxiv.org/abs/2203.15556">Chinchilla paper</a> showed that, under its training budget, a smaller model trained on more tokens outperformed larger models that had seen less data.</p>
+<p>That still leaves the question of which data to use. Duplicated pages, good code, books, and incorrect answers teach different patterns. If I'm calling a model a pattern matcher, that makes the examples it learned from more relevant to me.</p>
+<p>There's an adversarial version of this problem too. <a href="https://arxiv.org/abs/2302.10149">Poisoning Web-Scale Training Datasets is Practical</a> examines how attackers can alter content collected for training. <a href="https://arxiv.org/abs/2401.05566">Sleeper Agents</a> studies deliberately trained backdoor behavior that can survive subsequent safety training. These are different setups, but both make me wary of treating a dataset's size as sufficient information about it.</p>
+<h2>Serving the model</h2>
+<p>Running a trained model has two main phases:</p>
+<ul>
+<li><strong>Prefill:</strong> process the prompt.</li>
+<li><strong>Decode:</strong> generate new tokens, each depending on the ones before it.</li>
+</ul>
+<p>Prefill can process prompt positions in parallel. Decode has to proceed sequentially, which gives the two phases different performance characteristics.</p>
+<p>The KV cache stores keys and values computed for earlier tokens so the model can reuse them during generation. A longer conversation needs a larger cache. Moving that data can become a bottleneck even when there's enough compute available.</p>
+<p><a href="https://arxiv.org/abs/2309.06180">vLLM's PagedAttention</a> manages that cache in blocks, reducing wasted memory and making it easier to share storage. It's one example of why serving software matters: the same model can be much more practical to run with better memory management.</p>
+<h2>Pattern recognition</h2>
+<p>A lot of work I use LLMs for involves recognizing something familiar in text: a code smell, a likely cause of an error, a clause in a contract, or an awkward paragraph. A model trained on enough examples can be useful at those tasks without doing them the way I do.</p>
+<p>The trouble is that a plausible continuation isn't always a correct answer. Exact arithmetic needs checking. Missing facts need a source. A complicated change needs tests. I get better results when the system can do those checks and use what it finds on the next step.</p>
+<h2>Sources</h2>
+<ul>
+<li><a href="https://www.lesswrong.com/posts/XNBZPbxyYhmoqD87F/llms-and-computation-complexity">LLMs and computation complexity</a></li>
+<li><a href="https://papers.neurips.cc/paper/7181-attention-is-all-you-need.pdf">Attention Is All You Need</a></li>
+<li><a href="https://arxiv.org/abs/2205.14135">FlashAttention</a></li>
+<li><a href="https://arxiv.org/pdf/2211.05102">Efficiently Scaling Transformer Inference</a></li>
+<li><a href="https://arxiv.org/abs/2309.06180">vLLM / PagedAttention</a></li>
+<li><a href="https://arxiv.org/abs/2307.03172">Lost in the Middle</a></li>
+<li><a href="https://arxiv.org/abs/2407.16833">Retrieval Augmented Generation or Long-Context LLMs?</a></li>
+<li><a href="https://arxiv.org/abs/2001.08361">Scaling Laws for Neural Language Models</a></li>
+<li><a href="https://arxiv.org/abs/2203.15556">Training Compute-Optimal Large Language Models</a></li>
+<li><a href="https://arxiv.org/abs/2005.14165">Language Models are Few-Shot Learners</a></li>
+<li><a href="https://arxiv.org/abs/2302.10149">Poisoning Web-Scale Training Datasets is Practical</a></li>
+<li><a href="https://arxiv.org/abs/2401.05566">Sleeper Agents</a></li>
+</ul>
+
+</article></section>
+</main>
+</body>
+</html>
