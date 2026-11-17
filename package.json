@@ -1,0 +1,16 @@
+{
+  "name": "kguo-dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && wrangler dev --assets dist",
+    "deploy:worker": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "markdown-it": "15.0.3"
+  },
+  "devDependencies": {
+    "wrangler": "4.164.0"
+  }
+}
