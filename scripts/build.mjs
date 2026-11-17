@@ -108,22 +108,7 @@ await write('garden/index.html', page('Garden', `<main class="garden-layout">
 <section class="garden">
 <h1>Garden</h1>
 <p>Things I’m reading and links I keep coming back to.</p>
-<div id="filters" hidden>
-<div class="garden-search">
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4 4" stroke-linecap="round"/></svg>
-<input id="search" type="search" aria-label="Search bookmarks" placeholder="Find a bookmark…" autocomplete="off">
-<button id="clear-search" type="button" aria-label="Clear search" hidden>×</button>
-</div>
-<div id="collection" role="group" aria-label="Filter by list">
-<button type="button" data-collection="" aria-pressed="true">All</button>
-${['Reading List', 'Misc Links', 'Bookmarks'].map((name) => `<button type="button" data-collection="${name}" aria-pressed="false">${name}</button>`).join('')}
-</div>
-</div>
-<ul id="bookmarks">${bookmarks.map(({ title, url, collection }) => `<li>${url ? `<a href="${escape(url)}">${escape(title)}</a>` : escape(title)}<small>${escape(collection)}</small></li>`).join('')}</ul>
-<p id="empty" hidden>No matching bookmarks.</p>
-</section>
-<section id="owner" class="owner" hidden>
-<details>
+<details id="owner" class="owner">
 <summary>Owner tools</summary>
 <form id="login" hidden>
 <label>Password <input type="password" name="password" autocomplete="current-password" maxlength="128" required></label>
@@ -138,6 +123,19 @@ ${['Reading List', 'Misc Links', 'Bookmarks'].map((name) => `<button type="butto
 <button id="logout" type="button" hidden>Sign out</button>
 <p id="status" role="status"></p>
 </details>
+<div id="filters" hidden>
+<div class="garden-search">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4 4" stroke-linecap="round"/></svg>
+<input id="search" type="search" aria-label="Search bookmarks" placeholder="Find a bookmark…" autocomplete="off">
+<button id="clear-search" type="button" aria-label="Clear search" hidden>×</button>
+</div>
+<div id="collection" role="group" aria-label="Filter by list">
+<button type="button" data-collection="" aria-pressed="true">All</button>
+${['Reading List', 'Misc Links', 'Bookmarks'].map((name) => `<button type="button" data-collection="${name}" aria-pressed="false">${name}</button>`).join('')}
+</div>
+</div>
+<ul id="bookmarks">${bookmarks.map(({ title, url, collection }) => `<li>${url ? `<a href="${escape(url)}">${escape(title)}</a>` : escape(title)}<small>${escape(collection)}</small></li>`).join('')}</ul>
+<p id="empty" hidden>No matching bookmarks.</p>
 </section>
 <canvas id="garden-pixels" width="152" height="104" aria-hidden="true"></canvas>
 <script src="/garden.js" defer></script>

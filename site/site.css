@@ -107,19 +107,18 @@ article td, article th { border: 1px solid var(--rule); padding: .4rem; }
   color: var(--muted);
   font-size: 1.15rem;
 }
-#collection { display: flex; flex-wrap: wrap; gap: .25rem; }
+#collection { display: flex; flex-wrap: wrap; column-gap: 1rem; }
 #collection button {
   border: 0;
-  border-radius: 999px;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
   background: transparent;
-  padding: .3rem .65rem;
+  padding: .3rem 0;
   color: var(--muted);
   font-size: .8rem;
 }
-#collection button:hover, #collection button[aria-pressed="true"] {
-  background: var(--wash);
-  color: var(--ink);
-}
+#collection button:hover, #collection button[aria-pressed="true"] { color: var(--ink); }
+#collection button[aria-pressed="true"] { border-bottom-color: currentColor; }
 #garden-pixels {
   position: fixed;
   right: clamp(.4rem, 3vw, 2.5rem);
@@ -135,7 +134,16 @@ article td, article th { border: 1px solid var(--rule); padding: .4rem; }
 #bookmarks li { padding-block: .22rem; overflow-wrap: anywhere; }
 #bookmarks li + li { border-top: 1px solid var(--rule); }
 #bookmarks small { text-align: right; }
-.owner { margin-top: 2rem; font-size: .9rem; color: var(--muted); }
+.garden { position: relative; }
+.garden > h1 { padding-right: 7rem; }
+.owner { font-size: .88rem; color: var(--muted); }
+.owner summary {
+  position: absolute;
+  inset: 0 0 auto auto;
+  min-height: 40px;
+  text-underline-offset: .2em;
+}
+.owner summary:hover, .owner[open] summary { color: var(--ink); text-decoration: underline; }
 .owner form { display: grid; gap: .7rem; max-width: 25rem; margin: .8rem 0; }
 .owner form button { justify-self: start; }
 summary { cursor: pointer; padding: .5rem 0; }

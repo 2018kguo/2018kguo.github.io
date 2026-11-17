@@ -60,7 +60,6 @@ async function api(action, data) {
 }
 
 function signedIn(active) {
-  owner.hidden = false;
   login.hidden = active;
   add.hidden = !active;
   logout.hidden = !active;
@@ -106,7 +105,18 @@ const loadBookmarks = api('bookmarks').then((items) => {
   filter();
 }).catch(() => { /* The imported lists are also in the static page. */ });
 
-api('session').then((session) => signedIn(session.signedIn)).catch(() => {});
+owner.addEventListener('toggle', async () => {
+  if (!owner.open) return;
+  status.textContent = 'Checking sign-in…';
+  try {
+    const session = await api('session');
+    signedIn(session.signedIn);
+    status.textContent = '';
+  } catch {
+    login.hidden = add.hidden = logout.hidden = true;
+    status.textContent = 'Couldn’t reach the Garden API. Check your connection, then close and reopen Owner tools to retry.';
+  }
+});
 
 login.addEventListener('submit', handle(login.querySelector('button'), async () => {
   const data = Object.fromEntries(new FormData(login));
