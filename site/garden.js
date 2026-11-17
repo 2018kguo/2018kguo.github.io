@@ -162,8 +162,11 @@ function flower(x, y, color, height) {
   pixel('#f7d487', x, y - height);
 }
 
-if (garden) {
+function drawGarden(activeFlower = -1, blooming = false) {
+  garden.clearRect(0, 0, garden.canvas.width, garden.canvas.height);
   const meadow = ['#8dad76', '#7ea170', '#9ab683'];
+  const colors = ['#e9a79e', '#f3d28f', '#e8ded0', '#b8a7d0'];
+  const flowers = [];
   for (let row = 0; row < 6; row++) {
     for (let col = 0; col < 7; col++) {
       const x = 63 + (col - row) * 8;
@@ -175,9 +178,67 @@ if (garden) {
       if (pond && (row + col) % 2 === 0) pixel('#aed0c4', x + 7, y + 3, 5);
       if (path && (row + col) % 2 === 0) pixel('#aa9978', x + 8, y + 5, 2);
       if (!pond && !path && (row * 3 + col) % 4 !== 0) {
-        const flowers = ['#e9a79e', '#f3d28f', '#e8ded0', '#b8a7d0'];
-        flower(x + 10, y + 4, flowers[(row + col * 3) % flowers.length], 5 + (col % 3) * 2);
+        flowers.push({
+          x: x + 10,
+          y: y + 4,
+          color: colors[(row + col * 3) % colors.length],
+          height: 5 + (col % 3) * 2,
+        });
       }
     }
   }
+  for (const [index, plant] of flowers.entries()) {
+    const active = index === activeFlower % flowers.length && activeFlower >= 0;
+    const height = plant.height + (active ? 3 : 0);
+    flower(plant.x, plant.y, active ? '#fff0b7' : plant.color, height);
+    if (active && blooming) {
+      const tip = plant.y - height;
+      pixel('#f3d28f', plant.x - 5, tip - 3);
+      pixel('#fff0b7', plant.x + 5, tip - 5);
+      pixel('#e9a79e', plant.x + 1, tip - 6);
+    }
+  }
+}
+
+if (garden) {
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let hovered = null;
+  let focused = null;
+  let bloomTimer;
+  const bookmarkLink = (target) => target instanceof Element ? target.closest('a') : null;
+  const flowerFor = (link) => {
+    if (!link) return -1;
+    let hash = 0;
+    for (const character of link.href) hash = (Math.imul(hash, 31) + character.codePointAt(0)) >>> 0;
+    return hash;
+  };
+  const refresh = () => drawGarden(flowerFor(hovered ?? focused));
+  drawGarden();
+
+  list.addEventListener('pointerover', (event) => {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+    hovered = bookmarkLink(event.target);
+    refresh();
+  });
+  list.addEventListener('pointerout', (event) => {
+    if (!hovered || hovered.contains(event.relatedTarget)) return;
+    hovered = null;
+    refresh();
+  });
+  list.addEventListener('focusin', (event) => {
+    focused = bookmarkLink(event.target);
+    refresh();
+  });
+  list.addEventListener('focusout', () => {
+    focused = null;
+    refresh();
+  });
+  list.addEventListener('click', (event) => {
+    const link = bookmarkLink(event.target);
+    if (!link || reducedMotion.matches) return;
+    clearTimeout(bloomTimer);
+    drawGarden(flowerFor(link), true);
+    bloomTimer = setTimeout(refresh, 240);
+  });
+  addEventListener('pageshow', refresh);
 }
