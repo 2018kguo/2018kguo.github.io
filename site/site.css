@@ -1,5 +1,6 @@
 :root {
   color-scheme: light dark;
+  scrollbar-gutter: stable;
   --paper: light-dark(#fcfcfb, #151515);
   --ink: light-dark(#242423, #e6e6e4);
   --muted: light-dark(#656561, #a3a39e);
@@ -19,7 +20,6 @@ body {
   padding: 0 clamp(1.35rem, 5vw, 3rem) 5rem;
   font: 1rem/1.65 system-ui, sans-serif;
 }
-body:has(.notes-layout) { max-width: 66rem; }
 a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: .22em; }
 a:hover { text-decoration-color: currentColor; }
 :focus-visible { outline: 2px solid var(--muted); outline-offset: 3px; }
@@ -36,7 +36,7 @@ a:hover { text-decoration-color: currentColor; }
 .masthead nav a, .name, .name a { text-decoration: none; }
 .masthead nav a, #theme { color: var(--muted); }
 .masthead nav a:hover, .masthead nav a[aria-current], #theme:hover { color: var(--ink); }
-.name { font-size: 1rem; font-weight: 650; margin: 0 auto 0 0; letter-spacing: -.025em; }
+.name { font-size: 1rem; line-height: 1.65; font-weight: 650; margin: 0 auto 0 0; letter-spacing: -.025em; }
 h1, h2, h3 { line-height: 1.2; text-wrap: balance; }
 h1 { font-size: clamp(1.65rem, 4vw, 2.25rem); letter-spacing: -.045em; font-weight: 650; margin: 0 0 .8rem; }
 h2 { font-size: 1rem; font-weight: 630; letter-spacing: -.018em; margin: 0 0 .65rem; }
@@ -63,7 +63,7 @@ p { text-wrap: pretty; }
 .notes-list a, #bookmarks a { justify-self: start; }
 .notes-list a[aria-current] { font-weight: 650; text-decoration-color: currentColor; }
 small, .year { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
-.notes-layout { display: grid; grid-template-columns: minmax(11rem, 1fr) minmax(0, 3fr); gap: clamp(1.5rem, 6vw, 4rem); align-items: start; }
+.notes-layout { display: grid; grid-template-columns: minmax(9rem, 1fr) minmax(0, 3fr); gap: clamp(1.5rem, 6vw, 4rem); align-items: start; }
 .notes-nav { font-size: .9rem; }
 article { max-width: 67ch; overflow-wrap: anywhere; }
 article h2 { font-size: 1.15rem; margin-top: 2em; }
@@ -74,8 +74,64 @@ article td, article th { border: 1px solid var(--rule); padding: .4rem; }
 .back { display: inline-block; margin-bottom: .95rem; color: var(--muted); font-size: .85rem; }
 .year { margin-top: -.25rem; }
 .garden h1 + p { color: var(--muted); }
-#filters { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.6rem 0 .9rem; }
-#filters label, .owner label { display: grid; gap: .2rem; color: var(--muted); font-size: .8rem; }
+#filters { display: grid; gap: .7rem; margin: 1.6rem 0 1.05rem; }
+.garden-search {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  max-width: 24rem;
+  padding-inline: .72rem .25rem;
+  background: var(--wash);
+  border: 1px solid transparent;
+  border-radius: .55rem;
+  color: var(--muted);
+}
+.garden-search:focus-within { border-color: var(--muted); }
+.garden-search svg { flex: none; }
+#search {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  background: transparent;
+  outline: none;
+  border: 0;
+  padding-inline: 0;
+  font-size: .9rem;
+}
+#search::-webkit-search-cancel-button { appearance: none; }
+#clear-search {
+  background: transparent;
+  border: 0;
+  min-width: 40px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 1.15rem;
+}
+#collection { display: flex; flex-wrap: wrap; gap: .25rem; }
+#collection button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: .3rem .65rem;
+  color: var(--muted);
+  font-size: .8rem;
+}
+#collection button:hover, #collection button[aria-pressed="true"] {
+  background: var(--wash);
+  color: var(--ink);
+}
+#garden-pixels {
+  position: fixed;
+  right: clamp(.4rem, 3vw, 2.5rem);
+  bottom: clamp(.4rem, 3vw, 2.5rem);
+  width: clamp(9rem, 21vw, 18rem);
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: -1;
+  opacity: .82;
+}
+.owner label { display: grid; gap: .2rem; color: var(--muted); font-size: .8rem; }
 #bookmarks li { padding-block: .22rem; overflow-wrap: anywhere; }
 #bookmarks li + li { border-top: 1px solid var(--rule); }
 #bookmarks small { text-align: right; }
@@ -114,3 +170,7 @@ button:hover { background: var(--wash); }
   .name { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { #life { display: none; } }
+
+@media (max-width: 68rem) {
+  #garden-pixels { opacity: .2; }
+}
